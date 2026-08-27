@@ -41,6 +41,12 @@
         and t.task_id = #{taskId}
     </select>
 
+    <select id="selectChildren" resultMap="TaskInfoResult">
+        <include refid="selectTaskInfo"/>
+        and t.parent_id = #{parentId}
+        order by t.level asc, t.sort asc, t.task_id asc
+    </select>
+
     <select id="selectList" resultMap="TaskInfoResult">
         <include refid="selectTaskInfo"/>
         and t.group_id in
@@ -96,6 +102,22 @@
         where task_id = #{taskId} and framework_id = #{frameworkId}
           and group_id = #{groupId} and del_flag = '0'
     </update>
+
+    <update id="updateLevel">
+        update task_info
+        set level = #{level}, update_by = #{updateBy}, update_time = sysdate()
+        where task_id = #{taskId} and del_flag = '0'
+    </update>
+
+    <select id="countActiveChildren" resultType="int">
+        select count(1) from task_info
+        where parent_id = #{taskId} and del_flag = '0'
+    </select>
+
+    <select id="countSubmissions" resultType="int">
+        select count(1) from task_submission
+        where task_id = #{taskId} and del_flag = '0'
+    </select>
 
     <update id="deleteByIds">
         update task_info
