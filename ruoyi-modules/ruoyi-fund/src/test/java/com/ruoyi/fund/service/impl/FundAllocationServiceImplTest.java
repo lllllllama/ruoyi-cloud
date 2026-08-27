@@ -4,7 +4,10 @@ import static org.junit.Assert.*;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 import java.math.BigDecimal;
+import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.concurrent.atomic.AtomicReference;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -158,6 +161,102 @@ public class FundAllocationServiceImplTest
     }
 
     @Test
+    public void finishPersistsUnderExactAndOverExecutionResults()
+    {
+        FundProjectBudget budget = new FundProjectBudget();
+        budget.setBudgetId(1L);
+        budget.setTopicId(1L);
+        budget.setTotalAmount(money("200"));
+        when(budgetMapper.selectByTopicIdForUpdate(1L)).thenReturn(budget);
+        FundAllocationPlan under = runningPlan();
+        FundAllocationPlan exact = runningPlan();
+        exact.setPlanId(11L);
+        FundAllocationPlan over = runningPlan();
+        over.setPlanId(12L);
+        when(planMapper.selectForUpdate(10L)).thenReturn(under);
+        when(planMapper.selectForUpdate(11L)).thenReturn(exact);
+        when(planMapper.selectForUpdate(12L)).thenReturn(over);
+        when(recordMapper.sumByTopicId(1L)).thenReturn(money("120"));
+        when(recordMapper.sumByPlanId(10L)).thenReturn(money("80"));
+        when(recordMapper.sumByPlanId(11L)).thenReturn(money("100"));
+        when(recordMapper.sumByPlanId(12L)).thenReturn(money("120"));
+
+        service.finish(10L, confirmed("余额不再拨付"));
+        service.finish(11L, new FundFinishRequest());
+        service.finish(12L, confirmed("经确认允许单计划超额"));
+
+        verify(planMapper).finish(10L, money("80"), money("-20"), FundConstants.FINISH_UNDER,
+                "余额不再拨付", 1L, "user1");
+        verify(planMapper).finish(11L, money("100"), money("0"), FundConstants.FINISH_NORMAL,
+                null, 1L, "user1");
+        verify(planMapper).finish(12L, money("120"), money("20"), FundConstants.FINISH_OVER,
+                "经确认允许单计划超额", 1L, "user1");
+    }
+
+    @Test
+    public void recordInsertWaitingBehindSuccessfulCloseIsRejected() throws Exception
+    {
+        FundAllocationPlan plan = runningPlan();
+        CountDownLatch closeHasLock = new CountDownLatch(1);
+        CountDownLatch closeCommitted = new CountDownLatch(1);
+        when(planMapper.selectForUpdate(10L)).thenAnswer(invocation -> {
+            if (Thread.currentThread().getName().contains("record-after-close"))
+            {
+                closeCommitted.await(5, TimeUnit.SECONDS);
+            }
+            else
+            {
+                closeHasLock.countDown();
+            }
+            return plan;
+        });
+        when(recordMapper.sumByTopicId(1L)).thenReturn(money("100"));
+        when(recordMapper.sumByPlanId(10L)).thenReturn(money("100"));
+        AtomicReference<Throwable> closeFailure = new AtomicReference<>();
+        AtomicReference<Throwable> recordFailure = new AtomicReference<>();
+        Thread closeThread = new Thread(() -> {
+            try
+            {
+                service.finish(10L, new FundFinishRequest());
+                plan.setStatus(FundConstants.STATUS_FINISHED);
+            }
+            catch (Throwable error)
+            {
+                closeFailure.set(error);
+            }
+            finally
+            {
+                closeCommitted.countDown();
+            }
+        }, "allocation-close");
+        Thread recordThread = new Thread(() -> {
+            try
+            {
+                FundAllocationRecord record = new FundAllocationRecord();
+                record.setPlanId(10L);
+                record.setAmount(money("1"));
+                service.insertRecord(record);
+            }
+            catch (Throwable error)
+            {
+                recordFailure.set(error);
+            }
+        }, "allocation-record-after-close");
+
+        closeThread.start();
+        assertTrue(closeHasLock.await(5, TimeUnit.SECONDS));
+        recordThread.start();
+        closeThread.join(5000);
+        recordThread.join(5000);
+
+        assertFalse(closeThread.isAlive());
+        assertFalse(recordThread.isAlive());
+        assertNull(closeFailure.get());
+        assertTrue(recordFailure.get() instanceof ServiceException);
+        verify(recordMapper, never()).insert(any(FundAllocationRecord.class));
+    }
+
+    @Test
     public void userFromAnotherResearchGroupCannotReadPlanOrModifyRecordById()
     {
         FundAllocationPlan foreignPlan = runningPlan();
@@ -188,6 +287,14 @@ public class FundAllocationServiceImplTest
         FundFinishCheckVo result = service.finishCheck(10L);
         assertEquals(type, result.getFinishType());
         assertEquals(confirm, result.isNeedConfirm());
+    }
+
+    private FundFinishRequest confirmed(String reason)
+    {
+        FundFinishRequest request = new FundFinishRequest();
+        request.setConfirmDifference(true);
+        request.setReason(reason);
+        return request;
     }
 
     private FundAllocationPlan plan(BigDecimal amount)

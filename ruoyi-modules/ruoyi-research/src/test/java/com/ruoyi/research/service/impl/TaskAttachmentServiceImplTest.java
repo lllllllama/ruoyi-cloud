@@ -4,8 +4,11 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import java.util.Collections;
 import org.junit.After;
@@ -80,6 +83,31 @@ public class TaskAttachmentServiceImplTest
         {
             assertTrue(expected.getMessage().contains("No permission"));
         }
+    }
+
+    @Test
+    public void outsiderWithKnownTaskAttachmentIdCannotReachFileService()
+    {
+        TaskSubmission archived = submission("3");
+        TaskAttachment attachment = attachment();
+        attachment.setAttachmentId(50L);
+        attachment.setSubmissionId(40L);
+        when(attachmentMapper.selectById(50L)).thenReturn(attachment);
+        when(submissionMapper.selectById(40L)).thenReturn(archived);
+        login(21L);
+        doThrow(new ServiceException("No permission to view this submission"))
+                .when(permissionService).assertCanViewSubmission(archived, 21L);
+
+        try
+        {
+            service.download(50L);
+            fail("Outsider must not download a task attachment by ID");
+        }
+        catch (ServiceException expected)
+        {
+            assertTrue(expected.getMessage().contains("No permission"));
+        }
+        verify(remoteFileService, never()).download(anyString(), anyString());
     }
 
     private TaskSubmission submission(String status)
