@@ -62,6 +62,7 @@ public class TaskSubmissionServiceImpl implements TaskSubmissionService
     {
         TaskSubmission submission = requireSubmission(submissionId);
         assertCanView(submission);
+        enrichUserNames(submission);
         return submission;
     }
 
@@ -69,7 +70,13 @@ public class TaskSubmissionServiceImpl implements TaskSubmissionService
     public List<TaskSubmission> selectList(TaskSubmission query)
     {
         Long userId = SecurityUtils.getUserId();
-        return submissionMapper.selectList(query, userId, ResearchSecurityUtils.isSystemAdmin());
+        List<TaskSubmission> submissions = submissionMapper.selectList(query, userId,
+                ResearchSecurityUtils.isSystemAdmin());
+        for (TaskSubmission submission : submissions)
+        {
+            enrichUserNames(submission);
+        }
+        return submissions;
     }
 
     @Override
@@ -293,6 +300,26 @@ public class TaskSubmissionServiceImpl implements TaskSubmissionService
                         && researchPermissionService.isGroupMember(submission.getGroupId(), userId)))
         {
             throw new ServiceException("No permission to view this submission");
+        }
+    }
+
+    private void enrichUserNames(TaskSubmission submission)
+    {
+        if (submission.getSubmitUserId() != null)
+        {
+            FundUserOption user = orgService.getUser(submission.getSubmitUserId());
+            if (user != null)
+            {
+                submission.setSubmitUserName(user.getNickName());
+            }
+        }
+        if (submission.getArchiveUserId() != null)
+        {
+            FundUserOption user = orgService.getUser(submission.getArchiveUserId());
+            if (user != null)
+            {
+                submission.setArchiveUserName(user.getNickName());
+            }
         }
     }
 

@@ -35,6 +35,8 @@ public class TaskSubmission extends BaseEntity
     private String deliverableName;
     private String taskName;
     private String groupName;
+    private String submitUserName;
+    private String archiveUserName;
 
     public Long getSubmissionId() { return submissionId; }
     public void setSubmissionId(Long submissionId) { this.submissionId = submissionId; }
@@ -70,4 +72,8 @@ public class TaskSubmission extends BaseEntity
     public void setTaskName(String taskName) { this.taskName = taskName; }
     public String getGroupName() { return groupName; }
     public void setGroupName(String groupName) { this.groupName = groupName; }
+    public String getSubmitUserName() { return submitUserName; }
+    public void setSubmitUserName(String submitUserName) { this.submitUserName = submitUserName; }
+    public String getArchiveUserName() { return archiveUserName; }
+    public void setArchiveUserName(String archiveUserName) { this.archiveUserName = archiveUserName; }
 }
