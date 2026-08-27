@@ -52,6 +52,26 @@ public class TaskInfoServiceImpl implements TaskInfoService
     }
 
     @Override
+    public void validateFrameworkStructure(Long frameworkId)
+    {
+        TaskFramework framework = frameworkMapper.selectById(frameworkId);
+        if (framework == null)
+        {
+            throw new ServiceException("Annual task framework does not exist");
+        }
+        assertCanView(framework.getGroupId());
+        for (TaskInfo task : taskMapper.selectByFrameworkId(frameworkId))
+        {
+            if (taskMapper.countActiveChildren(task.getTaskId()) == 0
+                    && taskMapper.countActiveDeliverables(task.getTaskId()) == 0)
+            {
+                throw new ServiceException("Leaf task '" + task.getTaskName()
+                        + "' must contain at least one deliverable");
+            }
+        }
+    }
+
+    @Override
     @Transactional
     public int insert(TaskInfo task)
     {

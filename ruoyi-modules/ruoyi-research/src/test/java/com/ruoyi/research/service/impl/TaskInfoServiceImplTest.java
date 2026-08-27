@@ -5,6 +5,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+import java.util.Arrays;
 import java.util.Collections;
 import org.junit.After;
 import org.junit.Before;
@@ -35,6 +36,7 @@ public class TaskInfoServiceImplTest
         SecurityContextHolder.setUserId("10");
         SecurityContextHolder.setUserName("leader");
         when(permissionService.isGroupLeader(1L, 10L)).thenReturn(true);
+        when(permissionService.canViewGroup(1L, 10L)).thenReturn(true);
         TaskFramework framework = new TaskFramework();
         framework.setFrameworkId(100L);
         framework.setGroupId(1L);
@@ -98,6 +100,23 @@ public class TaskInfoServiceImplTest
         when(taskMapper.selectChildren(1L)).thenReturn(Collections.emptyList());
         when(taskMapper.countSubmissions(1L)).thenReturn(1);
         assertDenied(() -> service.update(input(1L, 3L, 2)), "submissions");
+    }
+
+    @Test
+    public void onlyLeafTasksRequireDeliverables()
+    {
+        TaskInfo directory = stored(1L, 0L, 1, 1L, 100L);
+        directory.setTaskName("Directory");
+        TaskInfo leaf = stored(2L, 1L, 2, 1L, 100L);
+        leaf.setTaskName("Leaf");
+        when(taskMapper.selectByFrameworkId(100L)).thenReturn(Arrays.asList(directory, leaf));
+        when(taskMapper.countActiveChildren(1L)).thenReturn(1);
+        when(taskMapper.countActiveChildren(2L)).thenReturn(0);
+        when(taskMapper.countActiveDeliverables(2L)).thenReturn(1);
+        service.validateFrameworkStructure(100L);
+
+        when(taskMapper.countActiveDeliverables(2L)).thenReturn(0);
+        assertDenied(() -> service.validateFrameworkStructure(100L), "Leaf task");
     }
 
     private TaskInfo input(Long taskId, Long parentId, Integer level)

@@ -47,6 +47,12 @@
         order by t.level asc, t.sort asc, t.task_id asc
     </select>
 
+    <select id="selectByFrameworkId" resultMap="TaskInfoResult">
+        <include refid="selectTaskInfo"/>
+        and t.framework_id = #{frameworkId}
+        order by t.level asc, t.parent_id asc, t.sort asc, t.task_id asc
+    </select>
+
     <select id="selectList" resultMap="TaskInfoResult">
         <include refid="selectTaskInfo"/>
         and t.group_id in
@@ -117,6 +123,11 @@
     <select id="countSubmissions" resultType="int">
         select count(1) from task_submission
         where task_id = #{taskId} and del_flag = '0'
+    </select>
+
+    <select id="countActiveDeliverables" resultType="int">
+        select count(1) from task_deliverable
+        where task_id = #{taskId} and del_flag = '0' and status != '3'
     </select>
 
     <update id="deleteByIds">

@@ -10,6 +10,8 @@ public interface TaskInfoMapper
 
     List<TaskInfo> selectChildren(Long parentId);
 
+    List<TaskInfo> selectByFrameworkId(Long frameworkId);
+
     List<TaskInfo> selectList(@Param("query") TaskInfo query,
             @Param("allowedGroupIds") List<Long> allowedGroupIds);
 
@@ -23,6 +25,8 @@ public interface TaskInfoMapper
     int countActiveChildren(Long taskId);
 
     int countSubmissions(Long taskId);
+
+    int countActiveDeliverables(Long taskId);
 
     int deleteByIds(@Param("taskIds") Long[] taskIds, @Param("updateBy") String updateBy);
 }

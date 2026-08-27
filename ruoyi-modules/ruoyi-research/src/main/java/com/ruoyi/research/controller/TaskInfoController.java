@@ -41,6 +41,14 @@ public class TaskInfoController extends BaseController
         return AjaxResult.success(taskService.selectById(id));
     }
 
+    @RequiresPermissions("task:info:edit")
+    @GetMapping("/framework/{frameworkId}/validate")
+    public AjaxResult validateFramework(@PathVariable Long frameworkId)
+    {
+        taskService.validateFrameworkStructure(frameworkId);
+        return AjaxResult.success("Task structure is valid");
+    }
+
     @RequiresPermissions("task:info:add")
     @Log(title = "Research task", businessType = BusinessType.INSERT)
     @PostMapping

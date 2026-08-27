@@ -9,6 +9,8 @@ public interface TaskInfoService
 
     List<TaskInfo> selectList(TaskInfo query);
 
+    void validateFrameworkStructure(Long frameworkId);
+
     int insert(TaskInfo task);
 
     int update(TaskInfo task);
