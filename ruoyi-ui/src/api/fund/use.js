@@ -11,3 +11,4 @@ export function updateUseRecord(data){return request({url:base+'/record',method:
 export function delUseRecord(id){return request({url:base+'/record/'+id,method:'delete'})}
 export function useFinishCheck(id){return request({url:base+'/plan/'+id+'/finish-check',method:'get'})}
 export function finishUse(id,confirmDifference,reason){return request({url:base+'/plan/'+id+'/finish',method:'put',data:{confirmDifference,reason}})}
+export function confirmForceFinish(id){return request({url:base+'/plan/'+id+'/force-finish/confirm',method:'put'})}

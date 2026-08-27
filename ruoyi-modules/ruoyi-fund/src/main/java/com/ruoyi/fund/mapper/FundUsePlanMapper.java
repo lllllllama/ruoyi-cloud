@@ -11,6 +11,8 @@ public interface FundUsePlanMapper {
     BigDecimal sumPlanAmount(@Param("topicId") Long topicId, @Param("excludeUsePlanId") Long excludeUsePlanId);
     int insert(FundUsePlan plan);
     int update(FundUsePlan plan);
-    int finish(@Param("usePlanId")Long usePlanId,@Param("actual")BigDecimal actual,@Param("difference")BigDecimal difference,@Param("finishType")String finishType,@Param("reason")String reason,@Param("finishUserId")Long finishUserId,@Param("updateBy")String updateBy);
+    int finish(@Param("usePlanId")Long usePlanId,@Param("actual")BigDecimal actual,@Param("difference")BigDecimal difference,@Param("finishType")String finishType,@Param("reason")String reason,@Param("forceFinish")boolean forceFinish,@Param("finishUserId")Long finishUserId,@Param("confirmUserId")Long confirmUserId,@Param("updateBy")String updateBy);
+    int requestForceFinish(@Param("usePlanId")Long usePlanId,@Param("actual")BigDecimal actual,@Param("difference")BigDecimal difference,@Param("reason")String reason,@Param("finishUserId")Long finishUserId,@Param("updateBy")String updateBy);
+    int confirmForceFinish(@Param("usePlanId")Long usePlanId,@Param("actual")BigDecimal actual,@Param("difference")BigDecimal difference,@Param("confirmUserId")Long confirmUserId,@Param("updateBy")String updateBy);
     int deleteById(Long usePlanId);
 }

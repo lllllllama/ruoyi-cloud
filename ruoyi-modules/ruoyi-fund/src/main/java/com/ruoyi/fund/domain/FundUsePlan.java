@@ -46,11 +46,15 @@ public class FundUsePlan extends BaseEntity
     /** 结束类型 */
     private String finishType;
     private String finishReason;
+    private String forceFinish;
     /** 结束人 */
     private Long finishUserId;
     /** 结束时间 */
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private Date finishTime;
+    private Long confirmUserId;
+    @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
+    private Date confirmTime;
 
     public Long getUsePlanId() { return usePlanId; }
     public void setUsePlanId(Long usePlanId) { this.usePlanId = usePlanId; }
@@ -82,8 +86,14 @@ public class FundUsePlan extends BaseEntity
     public void setFinishType(String finishType) { this.finishType = finishType; }
     public String getFinishReason() { return finishReason; }
     public void setFinishReason(String finishReason) { this.finishReason = finishReason; }
+    public String getForceFinish() { return forceFinish; }
+    public void setForceFinish(String forceFinish) { this.forceFinish = forceFinish; }
     public Long getFinishUserId() { return finishUserId; }
     public void setFinishUserId(Long finishUserId) { this.finishUserId = finishUserId; }
     public Date getFinishTime() { return finishTime; }
     public void setFinishTime(Date finishTime) { this.finishTime = finishTime; }
+    public Long getConfirmUserId() { return confirmUserId; }
+    public void setConfirmUserId(Long confirmUserId) { this.confirmUserId = confirmUserId; }
+    public Date getConfirmTime() { return confirmTime; }
+    public void setConfirmTime(Date confirmTime) { this.confirmTime = confirmTime; }
 }
