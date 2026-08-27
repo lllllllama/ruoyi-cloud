@@ -265,7 +265,9 @@ public class TaskSubmissionServiceImpl implements TaskSubmissionService
     {
         Long userId = SecurityUtils.getUserId();
         if (!userId.equals(submission.getSubmitUserId())
-                && !researchPermissionService.isGroupLeader(submission.getGroupId(), userId))
+                && !researchPermissionService.isGroupLeader(submission.getGroupId(), userId)
+                && !(STATUS_ARCHIVED.equals(submission.getStatus())
+                        && researchPermissionService.isGroupMember(submission.getGroupId(), userId)))
         {
             throw new ServiceException("No permission to view this submission");
         }

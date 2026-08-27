@@ -59,6 +59,11 @@
                     where leader.group_id = s.group_id and leader.user_id = #{userId}
                       and leader.member_role = 'LEADER' and leader.status = '0'
                 )
+                or (s.status = '3' and exists (
+                    select 1 from biz_research_group_member member
+                    where member.group_id = s.group_id and member.user_id = #{userId}
+                      and member.status = '0'
+                ))
             )
         </if>
         <if test="query.groupId != null">and s.group_id = #{query.groupId}</if>

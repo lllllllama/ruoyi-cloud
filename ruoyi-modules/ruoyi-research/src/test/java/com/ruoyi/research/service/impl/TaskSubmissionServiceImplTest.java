@@ -187,6 +187,46 @@ public class TaskSubmissionServiceImplTest
         verify(auditService).record(rejected, "RESUBMIT", "2", "1", "updated");
     }
 
+    @Test
+    public void archivedSubmissionIsReadOnlyAndVisibleToGroupMembers()
+    {
+        TaskSubmission archived = storedSubmission("3");
+        archived.setSubmitUserId(99L);
+        when(submissionMapper.selectById(40L)).thenReturn(archived);
+        when(researchPermissionService.isGroupMember(1L, 10L)).thenReturn(true);
+        assertEquals(archived, service.selectById(40L));
+
+        TaskSubmission update = input();
+        update.setSubmissionId(40L);
+        archived.setSubmitUserId(10L);
+        try
+        {
+            service.updateDraft(update);
+            fail("Archived submission must not be editable");
+        }
+        catch (ServiceException expected)
+        {
+            assertTrue(expected.getMessage().contains("draft or rejected"));
+        }
+    }
+
+    @Test
+    public void ordinaryMemberCannotCancelArchivedApproval()
+    {
+        TaskSubmission archived = storedSubmission("3");
+        when(submissionMapper.selectForUpdate(40L)).thenReturn(archived);
+        when(researchPermissionService.isGroupLeader(1L, 10L)).thenReturn(false);
+        try
+        {
+            service.cancelApprove(40L, null);
+            fail("Ordinary member must not cancel approval");
+        }
+        catch (ServiceException expected)
+        {
+            assertTrue(expected.getMessage().contains("leaders"));
+        }
+    }
+
     private TaskSubmission input()
     {
         TaskSubmission submission = new TaskSubmission();
