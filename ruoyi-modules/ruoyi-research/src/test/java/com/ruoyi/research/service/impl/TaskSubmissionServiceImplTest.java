@@ -6,6 +6,7 @@ import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.doThrow;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -103,6 +104,30 @@ public class TaskSubmissionServiceImplTest
         catch (ServiceException expected)
         {
             assertTrue(expected.getMessage().contains("draft or rejected"));
+        }
+    }
+
+    @Test
+    public void removedAssigneeCannotContinueEditingExistingDraft()
+    {
+        TaskSubmission old = input();
+        old.setSubmissionId(40L);
+        old.setSubmitUserId(10L);
+        old.setStatus("0");
+        old.setVersion(0);
+        when(submissionMapper.selectById(40L)).thenReturn(old);
+        doThrow(new ServiceException("not allowed"))
+                .when(taskPermissionService).assertCanSubmitDeliverable(30L, 10L);
+        TaskSubmission update = input();
+        update.setSubmissionId(40L);
+        try
+        {
+            service.updateDraft(update);
+            fail("Removed assignee must not keep editing a draft");
+        }
+        catch (ServiceException expected)
+        {
+            assertTrue(expected.getMessage().contains("not allowed"));
         }
     }
 

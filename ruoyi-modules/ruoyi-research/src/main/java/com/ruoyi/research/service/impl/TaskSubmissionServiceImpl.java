@@ -105,6 +105,7 @@ public class TaskSubmissionServiceImpl implements TaskSubmissionService
         TaskSubmission old = requireSubmission(input.getSubmissionId());
         assertOwner(old);
         assertEditable(old);
+        taskPermissionService.assertCanSubmitDeliverable(old.getDeliverableId(), SecurityUtils.getUserId());
         normalize(input);
         if (input.getDeliverableId() != null && !old.getDeliverableId().equals(input.getDeliverableId()))
         {
