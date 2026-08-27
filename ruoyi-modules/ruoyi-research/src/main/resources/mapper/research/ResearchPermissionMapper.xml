@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.research.mapper.ResearchPermissionMapper">
+    <sql id="activeGroupMember">
+        from biz_research_group_member m
+        inner join biz_research_group g on g.group_id = m.group_id
+        where g.del_flag = '0' and g.status = '0' and m.status = '0'
+    </sql>
+
+    <select id="countActiveMember" resultType="int">
+        select count(1)
+        <include refid="activeGroupMember"/>
+        and m.group_id = #{groupId} and m.user_id = #{userId}
+    </select>
+
+    <select id="countActiveRole" resultType="int">
+        select count(1)
+        <include refid="activeGroupMember"/>
+        and m.group_id = #{groupId} and m.user_id = #{userId} and m.member_role = #{memberRole}
+    </select>
+
+    <select id="countActiveUnitMember" resultType="int">
+        select count(1)
+        from biz_research_group_member m
+        inner join biz_research_group g on g.group_id = m.group_id
+        inner join biz_research_group_unit u
+          on u.group_id = m.group_id and u.dept_id = m.dept_id and u.status = '0'
+        where g.del_flag = '0' and g.status = '0' and m.status = '0'
+          and m.group_id = #{groupId} and m.dept_id = #{deptId} and m.user_id = #{userId}
+    </select>
+
+    <select id="countActiveUnitManager" resultType="int">
+        select count(1)
+        from biz_research_group_unit u
+        inner join biz_research_group g on g.group_id = u.group_id
+        where g.del_flag = '0' and g.status = '0' and u.status = '0'
+          and u.group_id = #{groupId} and u.dept_id = #{deptId} and u.manager_user_id = #{userId}
+    </select>
+
+    <select id="selectAllowedGroupIds" resultType="long">
+        select distinct m.group_id
+        <include refid="activeGroupMember"/>
+        and m.user_id = #{userId}
+        order by m.group_id
+    </select>
+
+    <select id="selectAllActiveGroupIds" resultType="long">
+        select group_id from biz_research_group
+        where del_flag = '0' and status = '0'
+        order by group_id
+    </select>
+</mapper>
