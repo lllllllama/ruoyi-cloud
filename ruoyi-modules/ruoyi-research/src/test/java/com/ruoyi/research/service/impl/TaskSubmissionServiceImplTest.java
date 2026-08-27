@@ -235,6 +235,27 @@ public class TaskSubmissionServiceImplTest
         }
     }
 
+    @Test
+    public void userFromGroupACannotReadSubmissionFromGroupBById()
+    {
+        TaskSubmission foreignSubmission = storedSubmission("3");
+        foreignSubmission.setSubmissionId(90L);
+        foreignSubmission.setGroupId(2L);
+        foreignSubmission.setSubmitUserId(99L);
+        when(submissionMapper.selectById(90L)).thenReturn(foreignSubmission);
+        doThrow(new ServiceException("No permission to view group B submission"))
+                .when(taskPermissionService).assertCanViewSubmission(foreignSubmission, 10L);
+        try
+        {
+            service.selectById(90L);
+            fail("A group user must not read a B group submission by ID");
+        }
+        catch (ServiceException expected)
+        {
+            assertTrue(expected.getMessage().contains("No permission"));
+        }
+    }
+
     private TaskSubmission input()
     {
         TaskSubmission submission = new TaskSubmission();

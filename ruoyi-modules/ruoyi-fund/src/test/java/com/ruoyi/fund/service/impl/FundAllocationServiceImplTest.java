@@ -157,6 +157,31 @@ public class FundAllocationServiceImplTest
         verify(researchService).isGroupUnitMember(1L, 2L, 21L);
     }
 
+    @Test
+    public void userFromAnotherResearchGroupCannotReadPlanOrModifyRecordById()
+    {
+        FundAllocationPlan foreignPlan = runningPlan();
+        foreignPlan.setPlanId(99L);
+        foreignPlan.setTopicId(2L);
+        when(planMapper.selectById(99L)).thenReturn(foreignPlan);
+        when(planMapper.selectForUpdate(99L)).thenReturn(foreignPlan);
+        doThrow(new ServiceException("无课题访问权限"))
+                .when(permissionService).assertGroupMember(2L, 10L);
+        login(10L);
+        assertDenied(() -> service.selectPlan(99L));
+
+        FundAllocationRecord stored = new FundAllocationRecord();
+        stored.setRecordId(88L);
+        stored.setPlanId(99L);
+        stored.setSubmitUserId(10L);
+        when(recordMapper.selectById(88L)).thenReturn(stored);
+        FundAllocationRecord update = new FundAllocationRecord();
+        update.setRecordId(88L);
+        update.setAmount(money("10"));
+        assertDenied(() -> service.updateRecord(update));
+        verify(recordMapper, never()).update(any(FundAllocationRecord.class));
+    }
+
     private void assertFinish(String actual, String type, boolean confirm)
     {
         when(recordMapper.sumByPlanId(10L)).thenReturn(money(actual));

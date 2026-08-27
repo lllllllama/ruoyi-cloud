@@ -3,6 +3,7 @@ package com.ruoyi.fund.service.impl;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 import org.junit.After;
@@ -90,12 +91,13 @@ public class FundPermissionServiceImplTest
     }
 
     @Test
-    public void internalUseDataRequiresMembershipButAllocationDataIsAuthenticatedPublic()
+    public void fundBusinessDataRequiresResearchGroupMembership()
     {
         service.assertCanAccessBusiness(GROUP_ID, FundAuditConstants.USE_RECORD, USER_ID);
         verify(researchService).assertGroupMember(GROUP_ID, USER_ID);
 
         service.assertCanAccessBusiness(GROUP_ID, FundAuditConstants.ALLOCATION_RECORD, USER_ID);
+        verify(researchService, times(2)).assertGroupMember(GROUP_ID, USER_ID);
         verify(researchService, never()).assertGroupLeader(GROUP_ID, USER_ID);
     }
 
@@ -105,6 +107,7 @@ public class FundPermissionServiceImplTest
         service.assertCanDownloadAttachment(GROUP_ID, FundAuditConstants.USE_RECORD, USER_ID);
         verify(researchService).assertGroupMember(GROUP_ID, USER_ID);
         service.assertCanDownloadAttachment(GROUP_ID, FundAuditConstants.ALLOCATION_RECORD, USER_ID);
+        verify(researchService, times(2)).assertGroupMember(GROUP_ID, USER_ID);
 
         expectDenied(new Action()
         {

@@ -4,6 +4,7 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import java.util.Arrays;
 import java.util.Collections;
@@ -115,6 +116,16 @@ public class TaskInfoServiceImplTest
 
         when(taskMapper.countActiveDeliverables(2L)).thenReturn(0);
         assertDenied(() -> service.validateFrameworkStructure(100L), "Leaf task");
+    }
+
+    @Test
+    public void userFromGroupACannotReadTaskFromGroupBById()
+    {
+        TaskInfo foreignTask = stored(90L, 0L, 1, 2L, 200L);
+        when(taskMapper.selectById(90L)).thenReturn(foreignTask);
+        doThrow(new ServiceException("No permission to view group B task"))
+                .when(permissionService).assertCanViewGroup(2L, 10L);
+        assertDenied(() -> service.selectById(90L), "No permission");
     }
 
     private TaskInfo input(Long taskId, Long parentId, Integer level)

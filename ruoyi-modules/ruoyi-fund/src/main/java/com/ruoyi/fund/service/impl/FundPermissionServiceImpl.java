@@ -68,18 +68,21 @@ public class FundPermissionServiceImpl implements FundPermissionService
 
     public void assertCanAccessBusiness(Long groupId, String businessType, Long userId)
     {
-        if (FundAuditConstants.USE_PLAN.equals(businessType) || FundAuditConstants.USE_RECORD.equals(businessType))
+        if (FundAuditConstants.ALLOCATION_PLAN.equals(businessType)
+                || FundAuditConstants.ALLOCATION_RECORD.equals(businessType)
+                || FundAuditConstants.USE_PLAN.equals(businessType)
+                || FundAuditConstants.USE_RECORD.equals(businessType))
             assertGroupMember(groupId, userId);
-        else if (!FundAuditConstants.ALLOCATION_PLAN.equals(businessType)
-                && !FundAuditConstants.ALLOCATION_RECORD.equals(businessType))
+        else
             throw new ServiceException("不支持的资金业务类型");
     }
 
     public void assertCanDownloadAttachment(Long groupId, String businessType, Long userId)
     {
-        if (FundAuditConstants.USE_RECORD.equals(businessType))
+        if (FundAuditConstants.ALLOCATION_RECORD.equals(businessType)
+                || FundAuditConstants.USE_RECORD.equals(businessType))
             assertGroupMember(groupId, userId);
-        else if (!FundAuditConstants.ALLOCATION_RECORD.equals(businessType))
+        else
             throw new ServiceException("不支持的附件业务类型");
     }
 }

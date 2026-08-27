@@ -134,6 +134,31 @@ public class FundUseServiceImplTest
                 eq(FundConstants.FINISH_NORMAL), isNull(), eq(false), eq(1L), isNull(), anyString());
     }
 
+    @Test
+    public void userFromAnotherResearchGroupCannotReadPlanOrModifyUseRecordById()
+    {
+        FundUsePlan foreignPlan = runningPlan();
+        foreignPlan.setUsePlanId(99L);
+        foreignPlan.setTopicId(2L);
+        when(planMapper.selectById(99L)).thenReturn(foreignPlan);
+        when(planMapper.selectForUpdate(99L)).thenReturn(foreignPlan);
+        doThrow(new ServiceException("无课题访问权限"))
+                .when(permissionService).assertGroupMember(2L, 10L);
+        login(10L);
+        assertDenied(() -> service.selectPlan(99L));
+
+        FundUseRecord stored = new FundUseRecord();
+        stored.setUseRecordId(88L);
+        stored.setUsePlanId(99L);
+        stored.setSubmitUserId(10L);
+        when(recordMapper.selectById(88L)).thenReturn(stored);
+        FundUseRecord update = new FundUseRecord();
+        update.setUseRecordId(88L);
+        update.setAmount(money("10"));
+        assertDenied(() -> service.updateRecord(update));
+        verify(recordMapper, never()).update(any(FundUseRecord.class));
+    }
+
     private void assertFinish(String actual, String type, boolean confirm)
     {
         when(recordMapper.sumByPlanId(10L)).thenReturn(money(actual));
