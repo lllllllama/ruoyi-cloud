@@ -11,4 +11,4 @@ export function addAllocationRecord(data){return request({url:base+'/record',met
 export function updateAllocationRecord(data){return request({url:base+'/record',method:'put',data})}
 export function delAllocationRecord(id){return request({url:base+'/record/'+id,method:'delete'})}
 export function allocationFinishCheck(id){return request({url:base+'/plan/'+id+'/finish-check',method:'get'})}
-export function finishAllocation(id,confirmDifference){return request({url:base+'/plan/'+id+'/finish',method:'put',data:{confirmDifference}})}
+export function finishAllocation(id,confirmDifference,reason){return request({url:base+'/plan/'+id+'/finish',method:'put',data:{confirmDifference,reason}})}

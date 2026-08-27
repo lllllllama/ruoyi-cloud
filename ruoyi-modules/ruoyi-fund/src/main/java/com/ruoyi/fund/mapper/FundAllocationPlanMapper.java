@@ -12,6 +12,6 @@ public interface FundAllocationPlanMapper {
     int insert(FundAllocationPlan plan);
     int update(FundAllocationPlan plan);
     int assign(@Param("planId")Long planId,@Param("userId")Long userId,@Param("userName")String userName,@Param("updateBy")String updateBy);
-    int finish(@Param("planId")Long planId,@Param("actual")BigDecimal actual,@Param("difference")BigDecimal difference,@Param("finishType")String finishType,@Param("finishUserId")Long finishUserId,@Param("updateBy")String updateBy);
+    int finish(@Param("planId")Long planId,@Param("actual")BigDecimal actual,@Param("difference")BigDecimal difference,@Param("finishType")String finishType,@Param("reason")String reason,@Param("finishUserId")Long finishUserId,@Param("updateBy")String updateBy);
     int deleteById(Long planId);
 }

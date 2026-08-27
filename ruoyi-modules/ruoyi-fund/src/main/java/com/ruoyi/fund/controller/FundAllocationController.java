@@ -11,5 +11,5 @@ import java.util.List; import org.springframework.beans.factory.annotation.Autow
  @RequiresPermissions("fund:allocation:submit") @Log(title="资金拨付记录",businessType=BusinessType.UPDATE) @PutMapping("/record") public AjaxResult editRecord(@Validated @RequestBody FundAllocationRecord r){return toAjax(service.updateRecord(r));}
  @RequiresPermissions("fund:allocation:submit") @Log(title="资金拨付记录",businessType=BusinessType.DELETE) @DeleteMapping("/record/{id}") public AjaxResult delRecord(@PathVariable Long id){return toAjax(service.deleteRecord(id));}
  @RequiresPermissions("fund:allocation:finish") @GetMapping("/plan/{id}/finish-check") public AjaxResult finishCheck(@PathVariable Long id){return AjaxResult.success(service.finishCheck(id));}
- @RequiresPermissions("fund:allocation:finish") @PutMapping("/plan/{id}/finish") public AjaxResult finish(@PathVariable Long id,@RequestBody FundFinishRequest r){service.finish(id,Boolean.TRUE.equals(r.getConfirmDifference()));return AjaxResult.success();}
+ @RequiresPermissions("fund:allocation:finish") @PutMapping("/plan/{id}/finish") public AjaxResult finish(@PathVariable Long id,@RequestBody FundFinishRequest r){service.finish(id,r);return AjaxResult.success();}
 }

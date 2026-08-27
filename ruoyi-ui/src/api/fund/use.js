@@ -10,4 +10,4 @@ export function addUseRecord(data){return request({url:base+'/record',method:'po
 export function updateUseRecord(data){return request({url:base+'/record',method:'put',data})}
 export function delUseRecord(id){return request({url:base+'/record/'+id,method:'delete'})}
 export function useFinishCheck(id){return request({url:base+'/plan/'+id+'/finish-check',method:'get'})}
-export function finishUse(id,confirmDifference){return request({url:base+'/plan/'+id+'/finish',method:'put',data:{confirmDifference}})}
+export function finishUse(id,confirmDifference,reason){return request({url:base+'/plan/'+id+'/finish',method:'put',data:{confirmDifference,reason}})}

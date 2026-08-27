@@ -55,6 +55,7 @@ public class FundAllocationPlan extends BaseEntity
     private BigDecimal differenceAmount;
     /** 结束类型 */
     private String finishType;
+    private String finishReason;
     /** 结束人 */
     private Long finishUserId;
     /** 结束时间 */
@@ -97,6 +98,8 @@ public class FundAllocationPlan extends BaseEntity
     public void setDifferenceAmount(BigDecimal differenceAmount) { this.differenceAmount = differenceAmount; }
     public String getFinishType() { return finishType; }
     public void setFinishType(String finishType) { this.finishType = finishType; }
+    public String getFinishReason() { return finishReason; }
+    public void setFinishReason(String finishReason) { this.finishReason = finishReason; }
     public Long getFinishUserId() { return finishUserId; }
     public void setFinishUserId(Long finishUserId) { this.finishUserId = finishUserId; }
     public Date getFinishTime() { return finishTime; }
