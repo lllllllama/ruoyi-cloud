@@ -238,6 +238,13 @@
                 <version>${ruoyi.version}</version>
             </dependency>
 
+            <!-- Research API -->
+            <dependency>
+                <groupId>com.ruoyi</groupId>
+                <artifactId>ruoyi-api-research</artifactId>
+                <version>${ruoyi.version}</version>
+            </dependency>
+
         </dependencies>
     </dependencyManagement>
 
