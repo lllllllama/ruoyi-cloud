@@ -38,6 +38,12 @@
         and d.deliverable_id = #{deliverableId}
     </select>
 
+    <select id="selectForUpdate" resultMap="TaskDeliverableResult">
+        <include refid="selectTaskDeliverable"/>
+        and d.deliverable_id = #{deliverableId}
+        for update
+    </select>
+
     <select id="selectList" resultMap="TaskDeliverableResult">
         <include refid="selectTaskDeliverable"/>
         and d.group_id in
@@ -93,6 +99,19 @@
         select count(1) from task_submission
         where deliverable_id = #{deliverableId} and del_flag = '0'
     </select>
+
+    <select id="countArchivedSubmissions" resultType="int">
+        select count(1) from task_submission
+        where deliverable_id = #{deliverableId} and status = '3' and del_flag = '0'
+    </select>
+
+    <update id="updateArchiveProgress">
+        update task_deliverable
+        set archived_num = #{archivedNum}, status = #{status},
+            finish_time = case when #{status} = '2' then sysdate() else null end,
+            update_by = #{updateBy}, update_time = sysdate()
+        where deliverable_id = #{deliverableId} and del_flag = '0'
+    </update>
 
     <update id="deleteById">
         update task_deliverable

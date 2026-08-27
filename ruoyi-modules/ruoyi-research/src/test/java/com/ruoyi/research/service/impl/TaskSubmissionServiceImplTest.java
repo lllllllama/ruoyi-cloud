@@ -5,6 +5,8 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.anyInt;
+import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
@@ -52,7 +54,11 @@ public class TaskSubmissionServiceImplTest
         deliverable.setDeliverableId(30L);
         deliverable.setTaskId(20L);
         deliverable.setGroupId(1L);
+        deliverable.setRequiredNum(2);
         when(deliverableMapper.selectById(30L)).thenReturn(deliverable);
+        when(deliverableMapper.selectForUpdate(30L)).thenReturn(deliverable);
+        when(deliverableMapper.updateArchiveProgress(anyLong(), anyInt(),
+                any(String.class), any(String.class))).thenReturn(1);
         TaskInfo task = new TaskInfo();
         task.setTaskId(20L);
         task.setGroupId(1L);
@@ -153,15 +159,19 @@ public class TaskSubmissionServiceImplTest
         TaskSubmission pending = storedSubmission("1");
         when(submissionMapper.selectForUpdate(40L)).thenReturn(pending);
         when(researchPermissionService.isGroupLeader(1L, 10L)).thenReturn(true);
+        when(deliverableMapper.countArchivedSubmissions(30L)).thenReturn(2);
         when(submissionMapper.approve(40L, 0, 10L, "submitter")).thenReturn(1);
         service.approve(40L, "ok");
         verify(auditService).record(pending, "APPROVE", "1", "3", "ok");
+        verify(deliverableMapper).updateArchiveProgress(30L, 2, "2", "submitter");
 
         TaskSubmission archived = storedSubmission("3");
         when(submissionMapper.selectForUpdate(40L)).thenReturn(archived);
+        when(deliverableMapper.countArchivedSubmissions(30L)).thenReturn(1);
         when(submissionMapper.cancelApprove(40L, 0, "submitter")).thenReturn(1);
         service.cancelApprove(40L, null);
         verify(auditService).record(archived, "CANCEL_APPROVE", "3", "1", null);
+        verify(deliverableMapper).updateArchiveProgress(30L, 1, "1", "submitter");
     }
 
     @Test

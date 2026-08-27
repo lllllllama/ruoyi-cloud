@@ -165,6 +165,7 @@ public class TaskSubmissionServiceImpl implements TaskSubmissionService
         requireStatus(submission, STATUS_PENDING, "Only a pending submission may be approved");
         assertTransition(submissionMapper.approve(submissionId, submission.getVersion(),
                 SecurityUtils.getUserId(), SecurityUtils.getUsername()));
+        recalculateDeliverable(submission.getDeliverableId());
         auditService.record(submission, "APPROVE", STATUS_PENDING, STATUS_ARCHIVED, trimOpinion(opinion));
     }
 
@@ -204,7 +205,24 @@ public class TaskSubmissionServiceImpl implements TaskSubmissionService
         assertAuditor(submission);
         requireStatus(submission, STATUS_ARCHIVED, "Only an archived submission may have approval cancelled");
         assertTransition(submissionMapper.cancelApprove(submissionId, submission.getVersion(), SecurityUtils.getUsername()));
+        recalculateDeliverable(submission.getDeliverableId());
         auditService.record(submission, "CANCEL_APPROVE", STATUS_ARCHIVED, STATUS_PENDING, trimOpinion(opinion));
+    }
+
+    private void recalculateDeliverable(Long deliverableId)
+    {
+        TaskDeliverable deliverable = deliverableMapper.selectForUpdate(deliverableId);
+        if (deliverable == null)
+        {
+            throw new ServiceException("Task deliverable does not exist");
+        }
+        int archivedNum = deliverableMapper.countArchivedSubmissions(deliverableId);
+        String status = archivedNum >= deliverable.getRequiredNum() ? "2" : (archivedNum > 0 ? "1" : "0");
+        if (deliverableMapper.updateArchiveProgress(deliverableId, archivedNum, status,
+                SecurityUtils.getUsername()) == 0)
+        {
+            throw new ServiceException("Failed to update deliverable archive progress");
+        }
     }
 
     private void normalize(TaskSubmission submission)
