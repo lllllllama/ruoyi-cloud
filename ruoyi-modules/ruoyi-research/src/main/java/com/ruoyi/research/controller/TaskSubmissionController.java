@@ -18,6 +18,7 @@ import com.ruoyi.common.core.web.page.TableDataInfo;
 import com.ruoyi.common.log.annotation.Log;
 import com.ruoyi.common.log.enums.BusinessType;
 import com.ruoyi.common.security.annotation.RequiresPermissions;
+import com.ruoyi.common.security.annotation.Logical;
 import com.ruoyi.research.domain.TaskSubmission;
 import com.ruoyi.research.domain.TaskAttachment;
 import com.ruoyi.research.domain.dto.TaskAuditRequest;
@@ -38,7 +39,8 @@ public class TaskSubmissionController extends BaseController
     @Autowired
     private TaskSubmissionAuditService auditService;
 
-    @RequiresPermissions("task:submission:add")
+    @RequiresPermissions(value = { "task:submission:add", "task:submission:audit",
+            "task:submission:cancelAudit", "task:info:list" }, logical = Logical.OR)
     @GetMapping("/list")
     public TableDataInfo list(TaskSubmission query)
     {
@@ -47,21 +49,24 @@ public class TaskSubmissionController extends BaseController
         return getDataTable(list);
     }
 
-    @RequiresPermissions("task:submission:add")
+    @RequiresPermissions(value = { "task:submission:add", "task:submission:audit",
+            "task:submission:cancelAudit", "task:info:list" }, logical = Logical.OR)
     @GetMapping("/{id}")
     public AjaxResult get(@PathVariable("id") Long id)
     {
         return AjaxResult.success(submissionService.selectById(id));
     }
 
-    @RequiresPermissions("task:submission:add")
+    @RequiresPermissions(value = { "task:submission:add", "task:submission:audit",
+            "task:submission:cancelAudit", "task:info:list" }, logical = Logical.OR)
     @GetMapping("/{id}/attachments")
     public AjaxResult attachments(@PathVariable("id") Long id)
     {
         return AjaxResult.success(attachmentService.selectBySubmissionId(id));
     }
 
-    @RequiresPermissions("task:submission:add")
+    @RequiresPermissions(value = { "task:submission:add", "task:submission:audit",
+            "task:submission:cancelAudit", "task:info:list" }, logical = Logical.OR)
     @GetMapping("/{id}/audits")
     public AjaxResult audits(@PathVariable("id") Long id)
     {
@@ -83,7 +88,8 @@ public class TaskSubmissionController extends BaseController
         return toAjax(attachmentService.delete(attachmentId));
     }
 
-    @RequiresPermissions("task:submission:add")
+    @RequiresPermissions(value = { "task:submission:add", "task:submission:audit",
+            "task:submission:cancelAudit", "task:info:list" }, logical = Logical.OR)
     @GetMapping("/attachment/{attachmentId}/download")
     public ResponseEntity<byte[]> downloadAttachment(@PathVariable Long attachmentId)
     {
