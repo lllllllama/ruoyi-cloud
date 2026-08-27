@@ -1,0 +1,96 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.research.mapper.TaskSubmissionMapper">
+    <resultMap id="TaskSubmissionResult" type="com.ruoyi.research.domain.TaskSubmission">
+        <id property="submissionId" column="submission_id"/>
+        <result property="groupId" column="group_id"/>
+        <result property="frameworkId" column="framework_id"/>
+        <result property="taskId" column="task_id"/>
+        <result property="deliverableId" column="deliverable_id"/>
+        <result property="submissionName" column="submission_name"/>
+        <result property="submissionDesc" column="submission_desc"/>
+        <result property="submitUserId" column="submit_user_id"/>
+        <result property="submitDeptId" column="submit_dept_id"/>
+        <result property="submitTime" column="submit_time"/>
+        <result property="status" column="status"/>
+        <result property="archiveUserId" column="archive_user_id"/>
+        <result property="archiveTime" column="archive_time"/>
+        <result property="version" column="version"/>
+        <result property="deliverableName" column="deliverable_name"/>
+        <result property="taskName" column="task_name"/>
+        <result property="groupName" column="group_name"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+
+    <sql id="selectTaskSubmission">
+        select s.submission_id, s.group_id, s.framework_id, s.task_id, s.deliverable_id,
+               s.submission_name, s.submission_desc, s.submit_user_id, s.submit_dept_id,
+               s.submit_time, s.status, s.archive_user_id, s.archive_time, s.version,
+               s.create_by, s.create_time, s.update_by, s.update_time,
+               d.deliverable_name, t.task_name, g.group_name
+        from task_submission s
+        inner join task_deliverable d on d.deliverable_id = s.deliverable_id and d.del_flag = '0'
+        inner join task_info t on t.task_id = s.task_id and t.del_flag = '0'
+        inner join biz_research_group g on g.group_id = s.group_id and g.del_flag = '0'
+        where s.del_flag = '0'
+    </sql>
+
+    <select id="selectById" resultMap="TaskSubmissionResult">
+        <include refid="selectTaskSubmission"/>
+        and s.submission_id = #{submissionId}
+    </select>
+
+    <select id="selectList" resultMap="TaskSubmissionResult">
+        <include refid="selectTaskSubmission"/>
+        <if test="!admin">
+            and (
+                s.submit_user_id = #{userId}
+                or exists (
+                    select 1 from biz_research_group_member leader
+                    where leader.group_id = s.group_id and leader.user_id = #{userId}
+                      and leader.member_role = 'LEADER' and leader.status = '0'
+                )
+            )
+        </if>
+        <if test="query.groupId != null">and s.group_id = #{query.groupId}</if>
+        <if test="query.frameworkId != null">and s.framework_id = #{query.frameworkId}</if>
+        <if test="query.taskId != null">and s.task_id = #{query.taskId}</if>
+        <if test="query.deliverableId != null">and s.deliverable_id = #{query.deliverableId}</if>
+        <if test="query.submitUserId != null">and s.submit_user_id = #{query.submitUserId}</if>
+        <if test="query.status != null and query.status != ''">and s.status = #{query.status}</if>
+        <if test="query.submissionName != null and query.submissionName != ''">
+            and s.submission_name like concat('%', #{query.submissionName}, '%')
+        </if>
+        order by s.create_time desc, s.submission_id desc
+    </select>
+
+    <insert id="insert" parameterType="com.ruoyi.research.domain.TaskSubmission"
+            useGeneratedKeys="true" keyProperty="submissionId">
+        insert into task_submission
+        (group_id, framework_id, task_id, deliverable_id, submission_name, submission_desc,
+         submit_user_id, submit_dept_id, submit_time, status, archive_user_id, archive_time,
+         version, create_by, create_time, del_flag)
+        values
+        (#{groupId}, #{frameworkId}, #{taskId}, #{deliverableId}, #{submissionName}, #{submissionDesc},
+         #{submitUserId}, #{submitDeptId}, #{submitTime}, #{status}, #{archiveUserId}, #{archiveTime},
+         #{version}, #{createBy}, sysdate(), '0')
+    </insert>
+
+    <update id="updateDraft" parameterType="com.ruoyi.research.domain.TaskSubmission">
+        update task_submission
+        set submission_name = #{submissionName}, submission_desc = #{submissionDesc},
+            update_by = #{updateBy}, update_time = sysdate(), version = version + 1
+        where submission_id = #{submissionId} and deliverable_id = #{deliverableId}
+          and status in ('0', '2') and del_flag = '0' and version = #{version}
+    </update>
+
+    <update id="deleteDraft">
+        update task_submission
+        set del_flag = '2', update_by = #{updateBy}, update_time = sysdate(), version = version + 1
+        where submission_id = #{submissionId} and status in ('0', '2')
+          and del_flag = '0' and version = #{version}
+    </update>
+</mapper>
