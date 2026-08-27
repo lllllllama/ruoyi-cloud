@@ -4,11 +4,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.http.ResponseEntity;
 import org.springframework.web.multipart.MultipartFile;
 import com.ruoyi.common.core.domain.R;
 import com.ruoyi.common.core.utils.file.FileUtils;
 import com.ruoyi.file.service.ISysFileService;
+import com.ruoyi.file.service.LocalFileDownloadService;
+import com.ruoyi.common.security.annotation.InnerAuth;
 import com.ruoyi.system.api.domain.SysFile;
 
 /**
@@ -23,6 +28,9 @@ public class SysFileController
 
     @Autowired
     private ISysFileService sysFileService;
+
+    @Autowired
+    private LocalFileDownloadService fileDownloadService;
 
     /**
      * 文件上传请求
@@ -44,5 +52,12 @@ public class SysFileController
             log.error("上传文件失败", e);
             return R.fail(e.getMessage());
         }
+    }
+
+    @InnerAuth
+    @GetMapping("internal/download")
+    public ResponseEntity<byte[]> download(@RequestParam("url") String url) throws Exception
+    {
+        return fileDownloadService.download(url);
     }
 }

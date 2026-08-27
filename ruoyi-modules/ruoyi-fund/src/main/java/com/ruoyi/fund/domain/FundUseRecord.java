@@ -4,6 +4,7 @@ import java.math.BigDecimal;
 import java.util.Date;
 import java.util.List;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.ruoyi.common.core.web.domain.BaseEntity;
 import javax.validation.constraints.DecimalMin;
 import javax.validation.constraints.NotBlank;
@@ -31,6 +32,7 @@ public class FundUseRecord extends BaseEntity
     /** 资金说明 */
     private String fundDesc;
     /** 使用凭证URL，逗号分隔 */
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String voucherUrls;
     /** 提交人ID */
     private Long submitUserId;

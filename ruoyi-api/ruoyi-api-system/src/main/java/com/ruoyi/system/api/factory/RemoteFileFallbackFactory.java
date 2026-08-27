@@ -3,6 +3,8 @@ package com.ruoyi.system.api.factory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.cloud.openfeign.FallbackFactory;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Component;
 import org.springframework.web.multipart.MultipartFile;
 import com.ruoyi.common.core.domain.R;
@@ -29,6 +31,12 @@ public class RemoteFileFallbackFactory implements FallbackFactory<RemoteFileServ
             public R<SysFile> upload(MultipartFile file)
             {
                 return R.fail("上传文件失败:" + throwable.getMessage());
+            }
+
+            @Override
+            public ResponseEntity<byte[]> download(String url, String source)
+            {
+                return ResponseEntity.status(HttpStatus.SERVICE_UNAVAILABLE).build();
             }
         };
     }

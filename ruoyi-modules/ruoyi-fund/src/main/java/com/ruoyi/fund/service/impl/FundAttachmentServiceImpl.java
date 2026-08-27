@@ -6,13 +6,23 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
+import java.io.UnsupportedEncodingException;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Service;
+import com.ruoyi.common.core.constant.SecurityConstants;
 import com.ruoyi.common.core.exception.ServiceException;
+import com.ruoyi.common.core.utils.file.FileUtils;
 import com.ruoyi.common.security.utils.SecurityUtils;
+import com.ruoyi.fund.constant.FundAuditConstants;
 import com.ruoyi.fund.domain.FundAttachment;
 import com.ruoyi.fund.mapper.FundAttachmentMapper;
 import com.ruoyi.fund.service.IFundAttachmentService;
+import com.ruoyi.fund.service.IFundResearchService;
+import com.ruoyi.fund.util.FundSecurityUtils;
+import com.ruoyi.system.api.RemoteFileService;
 
 @Service
 public class FundAttachmentServiceImpl implements IFundAttachmentService
@@ -24,6 +34,12 @@ public class FundAttachmentServiceImpl implements IFundAttachmentService
 
     @Autowired
     private FundAttachmentMapper mapper;
+
+    @Autowired
+    private IFundResearchService researchService;
+
+    @Autowired
+    private RemoteFileService remoteFileService;
 
     @Override
     public FundAttachment selectById(Long attachmentId)
@@ -64,6 +80,55 @@ public class FundAttachmentServiceImpl implements IFundAttachmentService
     public void deleteByBusiness(String businessType, Long businessId)
     {
         mapper.deleteByBusiness(businessType, businessId);
+    }
+
+    @Override
+    public ResponseEntity<byte[]> download(Long attachmentId)
+    {
+        FundAttachment attachment = mapper.selectById(attachmentId);
+        if (attachment == null)
+        {
+            throw new ServiceException("附件不存在");
+        }
+        Long userId = SecurityUtils.getUserId();
+        if (FundAuditConstants.USE_RECORD.equals(attachment.getBusinessType())
+                && !FundSecurityUtils.isSystemAdmin())
+        {
+            researchService.assertGroupMember(attachment.getGroupId(), userId);
+        }
+        else if (!FundAuditConstants.ALLOCATION_RECORD.equals(attachment.getBusinessType())
+                && !FundAuditConstants.USE_RECORD.equals(attachment.getBusinessType()))
+        {
+            throw new ServiceException("不支持的附件业务类型");
+        }
+
+        ResponseEntity<byte[]> remote = remoteFileService.download(
+                attachment.getFileUrl(), SecurityConstants.INNER);
+        if (remote == null || !remote.getStatusCode().is2xxSuccessful() || remote.getBody() == null)
+        {
+            throw new ServiceException("文件服务下载失败");
+        }
+
+        byte[] content = remote.getBody();
+        HttpHeaders headers = new HttpHeaders();
+        MediaType contentType = remote.getHeaders().getContentType();
+        headers.setContentType(contentType == null ? MediaType.APPLICATION_OCTET_STREAM : contentType);
+        headers.setContentLength(content.length);
+        headers.set(HttpHeaders.CONTENT_DISPOSITION, disposition(attachment.getOriginalName()));
+        return ResponseEntity.ok().headers(headers).body(content);
+    }
+
+    private String disposition(String fileName)
+    {
+        String safeName = fileName == null || fileName.trim().isEmpty() ? "attachment" : fileName;
+        try
+        {
+            return "attachment; filename*=UTF-8''" + FileUtils.percentEncode(safeName);
+        }
+        catch (UnsupportedEncodingException e)
+        {
+            throw new ServiceException("附件名称编码失败");
+        }
     }
 
     private List<String> parseUrls(String value)

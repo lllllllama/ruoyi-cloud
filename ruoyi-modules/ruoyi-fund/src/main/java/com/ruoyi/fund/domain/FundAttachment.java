@@ -3,6 +3,7 @@ package com.ruoyi.fund.domain;
 import java.io.Serializable;
 import java.util.Date;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public class FundAttachment implements Serializable
 {
@@ -14,6 +15,7 @@ public class FundAttachment implements Serializable
     private Long businessId;
     private String fileName;
     private String originalName;
+    @JsonIgnore
     private String fileUrl;
     private Long fileSize;
     private String fileType;
