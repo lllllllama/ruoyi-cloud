@@ -64,6 +64,14 @@ public class RemoteResearchController
     }
 
     @InnerAuth
+    @GetMapping("/group/{groupId}/unit/{deptId}/member/{userId}")
+    public R<Boolean> isGroupUnitMember(@PathVariable("groupId") Long groupId,
+            @PathVariable("deptId") Long deptId, @PathVariable("userId") Long userId)
+    {
+        return R.ok(permissionService.isGroupUnitMember(groupId, deptId, userId));
+    }
+
+    @InnerAuth
     @GetMapping("/user/{userId}/groups")
     public R<List<Long>> getAllowedGroupIds(@PathVariable("userId") Long userId)
     {

@@ -58,6 +58,10 @@
             <groupId>com.ruoyi</groupId>
             <artifactId>ruoyi-api-system</artifactId>
         </dependency>
+        <dependency>
+            <groupId>com.ruoyi</groupId>
+            <artifactId>ruoyi-api-research</artifactId>
+        </dependency>
     </dependencies>
 
     <build>

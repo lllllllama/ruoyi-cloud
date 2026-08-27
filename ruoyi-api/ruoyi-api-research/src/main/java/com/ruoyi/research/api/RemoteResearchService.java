@@ -44,6 +44,12 @@ public interface RemoteResearchService
             @PathVariable("userId") Long userId,
             @RequestHeader(SecurityConstants.FROM_SOURCE) String source);
 
+    @GetMapping("/internal/research/group/{groupId}/unit/{deptId}/member/{userId}")
+    R<Boolean> isGroupUnitMember(@PathVariable("groupId") Long groupId,
+            @PathVariable("deptId") Long deptId,
+            @PathVariable("userId") Long userId,
+            @RequestHeader(SecurityConstants.FROM_SOURCE) String source);
+
     @GetMapping("/internal/research/user/{userId}/groups")
     R<List<Long>> getAllowedGroupIds(@PathVariable("userId") Long userId,
             @RequestHeader(SecurityConstants.FROM_SOURCE) String source);

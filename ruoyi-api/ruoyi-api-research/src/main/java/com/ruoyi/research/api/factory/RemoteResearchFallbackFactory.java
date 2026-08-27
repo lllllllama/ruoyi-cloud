@@ -38,6 +38,8 @@ public class RemoteResearchFallbackFactory implements FallbackFactory<RemoteRese
             @Override
             public R<Boolean> isUnitManager(Long groupId, Long deptId, Long userId, String source) { return failed(); }
             @Override
+            public R<Boolean> isGroupUnitMember(Long groupId, Long deptId, Long userId, String source) { return failed(); }
+            @Override
             public R<List<Long>> getAllowedGroupIds(Long userId, String source) { return failed(); }
             @Override
             public R<List<ResearchGroupMemberDto>> getSelectableMembers(Long groupId, Long deptId, String source) { return failed(); }

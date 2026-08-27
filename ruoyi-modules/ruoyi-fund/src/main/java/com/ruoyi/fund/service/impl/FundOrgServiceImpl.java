@@ -17,6 +17,4 @@ public class FundOrgServiceImpl implements IFundOrgService {
  public FundDeptOption getDept(Long id){return data(remote.getDept(id,SecurityConstants.INNER));}
  public List<FundUserOption> getUsersByDept(Long id){return data(remote.getUsersByDept(id,SecurityConstants.INNER));}
  public FundUserOption getUser(Long id){return data(remote.getUser(id,SecurityConstants.INNER));}
- public boolean isDeptMember(Long deptId,Long userId){FundUserOption u=getUser(userId);return u!=null&&deptId!=null&&deptId.equals(u.getDeptId());}
- public boolean isDeptLeader(Long deptId,Long userId){FundDeptOption d=getDept(deptId);FundUserOption u=getUser(userId);return d!=null&&u!=null&&d.getLeader()!=null&&d.getLeader().equals(u.getUserName());}
 }

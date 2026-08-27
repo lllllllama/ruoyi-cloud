@@ -2,7 +2,7 @@
 <!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
 <mapper namespace="com.ruoyi.fund.mapper.FundProjectBudgetMapper">
   <resultMap id="r" type="FundProjectBudget"><id property="budgetId" column="budget_id"/><result property="topicId" column="topic_id"/><result property="topicName" column="topic_name"/><result property="totalAmount" column="total_amount"/><result property="planEndTime" column="plan_end_time"/><result property="fundDesc" column="fund_desc"/><result property="status" column="status"/><result property="createBy" column="create_by"/><result property="createTime" column="create_time"/><result property="updateBy" column="update_by"/><result property="updateTime" column="update_time"/></resultMap>
-  <sql id="base">select b.budget_id,b.topic_id,t.topic_name,b.total_amount,b.plan_end_time,b.fund_desc,b.status,b.create_by,b.create_time,b.update_by,b.update_time from fund_project_budget b join fund_topic t on t.topic_id=b.topic_id and t.del_flag='0' where b.del_flag='0'</sql>
+  <sql id="base">select b.budget_id,b.topic_id,null as topic_name,b.total_amount,b.plan_end_time,b.fund_desc,b.status,b.create_by,b.create_time,b.update_by,b.update_time from fund_project_budget b where b.del_flag='0'</sql>
   <select id="selectById" resultMap="r"><include refid="base"/> and b.budget_id=#{budgetId}</select>
   <select id="selectByTopicId" resultMap="r"><include refid="base"/> and b.topic_id=#{topicId}</select>
   <select id="selectByTopicIdForUpdate" resultMap="r"><include refid="base"/> and b.topic_id=#{topicId} for update</select>
