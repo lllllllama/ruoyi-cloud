@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.fund.mapper.FundAttachmentMapper">
+  <resultMap id="FundAttachmentResult" type="FundAttachment">
+    <id property="attachmentId" column="attachment_id"/>
+    <result property="groupId" column="group_id"/>
+    <result property="businessType" column="business_type"/>
+    <result property="businessId" column="business_id"/>
+    <result property="fileName" column="file_name"/>
+    <result property="originalName" column="original_name"/>
+    <result property="fileUrl" column="file_url"/>
+    <result property="fileSize" column="file_size"/>
+    <result property="fileType" column="file_type"/>
+    <result property="uploadUserId" column="upload_user_id"/>
+    <result property="uploadTime" column="upload_time"/>
+    <result property="delFlag" column="del_flag"/>
+  </resultMap>
+
+  <sql id="columns">attachment_id,group_id,business_type,business_id,file_name,original_name,file_url,file_size,file_type,upload_user_id,upload_time,del_flag</sql>
+
+  <select id="selectById" resultMap="FundAttachmentResult">
+    select <include refid="columns"/> from fund_attachment
+    where attachment_id=#{attachmentId} and del_flag='0'
+  </select>
+
+  <select id="selectByBusiness" resultMap="FundAttachmentResult">
+    select <include refid="columns"/> from fund_attachment
+    where business_type=#{businessType} and business_id=#{businessId} and del_flag='0'
+    order by attachment_id
+  </select>
+
+  <insert id="insert" useGeneratedKeys="true" keyProperty="attachmentId">
+    insert into fund_attachment
+      (group_id,business_type,business_id,file_name,original_name,file_url,file_size,file_type,upload_user_id,upload_time,del_flag)
+    values
+      (#{groupId},#{businessType},#{businessId},#{fileName},#{originalName},#{fileUrl},#{fileSize},#{fileType},#{uploadUserId},#{uploadTime},#{delFlag})
+  </insert>
+
+  <update id="deleteByBusiness">
+    update fund_attachment set del_flag='2'
+    where business_type=#{businessType} and business_id=#{businessId} and del_flag='0'
+  </update>
+</mapper>

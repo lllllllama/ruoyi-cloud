@@ -36,6 +36,7 @@ public class FundUseRecord extends BaseEntity
     private Long submitUserId;
     /** 提交人名称 */
     private String submitUserName;
+    private List<FundAttachment> attachments;
 
     public Long getUseRecordId() { return useRecordId; }
     public void setUseRecordId(Long useRecordId) { this.useRecordId = useRecordId; }
@@ -55,4 +56,6 @@ public class FundUseRecord extends BaseEntity
     public void setSubmitUserId(Long submitUserId) { this.submitUserId = submitUserId; }
     public String getSubmitUserName() { return submitUserName; }
     public void setSubmitUserName(String submitUserName) { this.submitUserName = submitUserName; }
+    public List<FundAttachment> getAttachments() { return attachments; }
+    public void setAttachments(List<FundAttachment> attachments) { this.attachments = attachments; }
 }
