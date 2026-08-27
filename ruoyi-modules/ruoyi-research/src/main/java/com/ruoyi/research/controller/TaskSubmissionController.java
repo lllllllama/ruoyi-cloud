@@ -21,6 +21,7 @@ import com.ruoyi.common.security.annotation.RequiresPermissions;
 import com.ruoyi.research.domain.TaskSubmission;
 import com.ruoyi.research.domain.TaskAttachment;
 import com.ruoyi.research.service.TaskAttachmentService;
+import com.ruoyi.research.service.TaskSubmissionAuditService;
 import com.ruoyi.research.service.TaskSubmissionService;
 
 @RestController
@@ -32,6 +33,9 @@ public class TaskSubmissionController extends BaseController
 
     @Autowired
     private TaskAttachmentService attachmentService;
+
+    @Autowired
+    private TaskSubmissionAuditService auditService;
 
     @RequiresPermissions("task:submission:add")
     @GetMapping("/list")
@@ -54,6 +58,13 @@ public class TaskSubmissionController extends BaseController
     public AjaxResult attachments(@PathVariable("id") Long id)
     {
         return AjaxResult.success(attachmentService.selectBySubmissionId(id));
+    }
+
+    @RequiresPermissions("task:submission:add")
+    @GetMapping("/{id}/audits")
+    public AjaxResult audits(@PathVariable("id") Long id)
+    {
+        return AjaxResult.success(auditService.selectBySubmissionId(id));
     }
 
     @RequiresPermissions("task:submission:edit")

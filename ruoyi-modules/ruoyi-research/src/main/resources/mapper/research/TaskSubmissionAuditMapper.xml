@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.research.mapper.TaskSubmissionAuditMapper">
+    <resultMap id="TaskSubmissionAuditResult" type="com.ruoyi.research.domain.TaskSubmissionAudit">
+        <id property="auditId" column="audit_id"/>
+        <result property="submissionId" column="submission_id"/>
+        <result property="groupId" column="group_id"/>
+        <result property="action" column="action"/>
+        <result property="beforeStatus" column="before_status"/>
+        <result property="afterStatus" column="after_status"/>
+        <result property="auditUserId" column="audit_user_id"/>
+        <result property="auditOpinion" column="audit_opinion"/>
+        <result property="auditTime" column="audit_time"/>
+    </resultMap>
+
+    <select id="selectBySubmissionId" resultMap="TaskSubmissionAuditResult">
+        select audit_id, submission_id, group_id, action, before_status, after_status,
+               audit_user_id, audit_opinion, audit_time
+        from task_submission_audit
+        where submission_id = #{submissionId}
+        order by audit_id
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="auditId">
+        insert into task_submission_audit
+        (submission_id, group_id, action, before_status, after_status,
+         audit_user_id, audit_opinion, audit_time)
+        values
+        (#{submissionId}, #{groupId}, #{action}, #{beforeStatus}, #{afterStatus},
+         #{auditUserId}, #{auditOpinion}, #{auditTime})
+    </insert>
+</mapper>
