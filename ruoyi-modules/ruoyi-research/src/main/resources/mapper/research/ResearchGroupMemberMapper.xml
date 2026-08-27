@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.research.mapper.ResearchGroupMemberMapper">
+    <resultMap id="ResearchGroupMemberResult" type="com.ruoyi.research.domain.ResearchGroupMember">
+        <id property="id" column="id"/>
+        <result property="groupId" column="group_id"/>
+        <result property="userId" column="user_id"/>
+        <result property="deptId" column="dept_id"/>
+        <result property="memberRole" column="member_role"/>
+        <result property="status" column="status"/>
+        <result property="joinTime" column="join_time"/>
+        <result property="leaveTime" column="leave_time"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateTime" column="update_time"/>
+    </resultMap>
+
+    <select id="selectById" resultMap="ResearchGroupMemberResult">
+        select id, group_id, user_id, dept_id, member_role, status, join_time, leave_time,
+               create_by, create_time, update_time
+        from biz_research_group_member where id = #{id}
+    </select>
+
+    <select id="selectByGroupId" resultMap="ResearchGroupMemberResult">
+        select id, group_id, user_id, dept_id, member_role, status, join_time, leave_time,
+               create_by, create_time, update_time
+        from biz_research_group_member
+        where group_id = #{groupId}
+        order by case member_role when 'LEADER' then 0 when 'CORE' then 1
+                 when 'MEMBER' then 2 else 3 end, id
+    </select>
+
+    <select id="countSameRole" resultType="int">
+        select count(1) from biz_research_group_member
+        where group_id = #{groupId} and user_id = #{userId} and member_role = #{memberRole}
+        <if test="excludeId != null">
+            and id != #{excludeId}
+        </if>
+    </select>
+
+    <insert id="insert" parameterType="com.ruoyi.research.domain.ResearchGroupMember"
+            useGeneratedKeys="true" keyProperty="id">
+        insert into biz_research_group_member
+        (group_id, user_id, dept_id, member_role, status, join_time, leave_time, create_by, create_time)
+        values
+        (#{groupId}, #{userId}, #{deptId}, #{memberRole}, #{status},
+         ifnull(#{joinTime}, sysdate()), #{leaveTime}, #{createBy}, sysdate())
+    </insert>
+
+    <update id="update" parameterType="com.ruoyi.research.domain.ResearchGroupMember">
+        update biz_research_group_member
+        set user_id = #{userId}, dept_id = #{deptId}, member_role = #{memberRole},
+            status = #{status}, join_time = #{joinTime}, leave_time = #{leaveTime},
+            update_time = sysdate()
+        where id = #{id} and group_id = #{groupId}
+    </update>
+
+    <delete id="deleteByGroupAndUser">
+        delete from biz_research_group_member where group_id = #{groupId} and user_id = #{userId}
+    </delete>
+</mapper>

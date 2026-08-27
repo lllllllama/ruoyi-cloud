@@ -19,6 +19,11 @@
         order by case when unit_type = 'LEAD' then 0 else 1 end, id
     </select>
 
+    <select id="countActiveByGroupAndDept" resultType="int">
+        select count(1) from biz_research_group_unit
+        where group_id = #{groupId} and dept_id = #{deptId} and status = '0'
+    </select>
+
     <insert id="batchInsert">
         insert into biz_research_group_unit
         (group_id, dept_id, unit_type, manager_user_id, status, create_by, create_time)
