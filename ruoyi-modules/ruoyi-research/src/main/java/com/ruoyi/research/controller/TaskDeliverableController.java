@@ -16,10 +16,12 @@ import com.ruoyi.common.core.web.domain.AjaxResult;
 import com.ruoyi.common.log.annotation.Log;
 import com.ruoyi.common.log.enums.BusinessType;
 import com.ruoyi.common.security.annotation.RequiresPermissions;
+import com.ruoyi.common.security.utils.SecurityUtils;
 import com.ruoyi.research.domain.TaskDeliverable;
 import com.ruoyi.research.domain.dto.TaskDeliverableAssignRequest;
 import com.ruoyi.research.service.TaskDeliverableService;
 import com.ruoyi.research.service.TaskDeliverableUserService;
+import com.ruoyi.research.service.TaskPermissionService;
 
 @RestController
 @RequestMapping("/deliverable")
@@ -30,6 +32,9 @@ public class TaskDeliverableController extends BaseController
 
     @Autowired
     private TaskDeliverableUserService deliverableUserService;
+
+    @Autowired
+    private TaskPermissionService taskPermissionService;
 
     @RequiresPermissions("task:info:list")
     @GetMapping("/list")
@@ -51,6 +56,13 @@ public class TaskDeliverableController extends BaseController
     public AjaxResult assignees(@PathVariable("id") Long id)
     {
         return AjaxResult.success(deliverableUserService.selectByDeliverableId(id));
+    }
+
+    @RequiresPermissions("task:info:list")
+    @GetMapping("/{id}/can-submit")
+    public AjaxResult canSubmit(@PathVariable("id") Long id)
+    {
+        return AjaxResult.success(taskPermissionService.canSubmitDeliverable(id, SecurityUtils.getUserId()));
     }
 
     @RequiresPermissions("task:deliverable:assign")
