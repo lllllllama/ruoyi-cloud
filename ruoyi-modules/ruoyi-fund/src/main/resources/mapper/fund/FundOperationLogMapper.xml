@@ -1,0 +1,36 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.fund.mapper.FundOperationLogMapper">
+  <resultMap id="FundOperationLogResult" type="FundOperationLog">
+    <id property="logId" column="log_id"/>
+    <result property="groupId" column="group_id"/>
+    <result property="businessType" column="business_type"/>
+    <result property="businessId" column="business_id"/>
+    <result property="operationType" column="operation_type"/>
+    <result property="beforeData" column="before_data"/>
+    <result property="afterData" column="after_data"/>
+    <result property="reason" column="reason"/>
+    <result property="operatorId" column="operator_id"/>
+    <result property="operationTime" column="operation_time"/>
+  </resultMap>
+
+  <insert id="insert" useGeneratedKeys="true" keyProperty="logId">
+    insert into fund_operation_log
+      (group_id,business_type,business_id,operation_type,before_data,after_data,reason,operator_id,operation_time)
+    values
+      (#{groupId},#{businessType},#{businessId},#{operationType},#{beforeData},#{afterData},#{reason},#{operatorId},#{operationTime})
+  </insert>
+
+  <select id="selectList" resultMap="FundOperationLogResult">
+    select log_id,group_id,business_type,business_id,operation_type,before_data,after_data,
+           reason,operator_id,operation_time
+    from fund_operation_log
+    <where>
+      <if test="groupId!=null">and group_id=#{groupId}</if>
+      <if test="businessType!=null and businessType!=''">and business_type=#{businessType}</if>
+      <if test="businessId!=null">and business_id=#{businessId}</if>
+      <if test="operationType!=null and operationType!=''">and operation_type=#{operationType}</if>
+    </where>
+    order by operation_time desc,log_id desc
+  </select>
+</mapper>
