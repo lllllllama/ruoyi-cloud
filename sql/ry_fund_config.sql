@@ -1,0 +1,6 @@
+USE `ry-config`;
+SET @fund_content = '# spring配置\nspring:\n  redis:\n    host: localhost\n    port: 6379\n    password:\n  datasource:\n    dynamic:\n      primary: master\n      datasource:\n        master:\n          driver-class-name: com.mysql.cj.jdbc.Driver\n          url: jdbc:mysql://localhost:3306/ry-fund?useUnicode=true&characterEncoding=utf8&zeroDateTimeBehavior=convertToNull&useSSL=true&serverTimezone=GMT%2B8\n          username: root\n          password: password\n\nmybatis:\n  typeAliasesPackage: com.ruoyi.fund.domain\n  mapperLocations: classpath:mapper/**/*.xml\n\nswagger:\n  title: 资金管理模块接口文档\n  license: Powered By ruoyi\n  licenseUrl: https://ruoyi.vip\n\nseata:\n  enabled: false\n  enable-auto-data-source-proxy: false\n';
+INSERT INTO config_info(data_id,group_id,content,md5,gmt_create,gmt_modified,src_user,src_ip,app_name,tenant_id,c_desc,c_use,effect,type,c_schema)
+VALUES('ruoyi-fund-dev.yml','DEFAULT_GROUP',@fund_content,MD5(@fund_content),NOW(),NOW(),'fund-install','127.0.0.1','','','资金管理模块','null','null','yaml','null')
+ON DUPLICATE KEY UPDATE content=VALUES(content),md5=VALUES(md5),gmt_modified=NOW();
+-- 网关已开启 discovery.locator.enabled=true，因此前端使用 /ruoyi-fund/** 自动发现，不需要修改现有 gateway 配置。

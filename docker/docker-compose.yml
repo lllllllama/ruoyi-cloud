@@ -131,6 +131,19 @@ services:
       - "9300:9300"
     volumes:
     - ./ruoyi/uploadPath:/home/ruoyi/uploadPath
+  ruoyi-modules-fund:
+    container_name: ruoyi-modules-fund
+    build:
+      context: ./ruoyi/modules/fund
+      dockerfile: dockerfile
+    ports:
+      - "9205:9205"
+    depends_on:
+      - ruoyi-mysql
+      - ruoyi-redis
+    links:
+      - ruoyi-mysql
+      - ruoyi-redis
   ruoyi-visual-monitor:
     container_name: ruoyi-visual-monitor
     build:

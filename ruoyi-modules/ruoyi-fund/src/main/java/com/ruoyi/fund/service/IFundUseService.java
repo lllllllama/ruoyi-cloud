@@ -1,0 +1,3 @@
+package com.ruoyi.fund.service;
+import java.util.List; import com.ruoyi.fund.domain.*; import com.ruoyi.fund.domain.vo.FundFinishCheckVo;
+public interface IFundUseService { List<FundUsePlan> selectPlanList(FundUsePlan q); FundUsePlan selectPlan(Long id); int insertPlan(FundUsePlan p); int updatePlan(FundUsePlan p); int deletePlan(Long id); List<FundUseRecord> selectRecords(Long id); int insertRecord(FundUseRecord r); int updateRecord(FundUseRecord r); int deleteRecord(Long id); FundFinishCheckVo finishCheck(Long id); void finish(Long id,boolean confirm); }

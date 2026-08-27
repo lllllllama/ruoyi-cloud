@@ -1,0 +1,3 @@
+package com.ruoyi.fund.controller;
+import org.springframework.beans.factory.annotation.Autowired; import org.springframework.web.bind.annotation.*; import com.ruoyi.common.core.web.domain.AjaxResult; import com.ruoyi.fund.service.IFundOrgService;
+@RestController @RequestMapping("/org") public class FundOrgController { @Autowired private IFundOrgService service; @GetMapping("/depts") public AjaxResult depts(){return AjaxResult.success(service.getDepts());} @GetMapping("/dept/{deptId}/users") public AjaxResult users(@PathVariable Long deptId){return AjaxResult.success(service.getUsersByDept(deptId));} }

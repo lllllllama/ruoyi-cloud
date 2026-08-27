@@ -10,7 +10,9 @@ usage() {
 # copy sql
 echo "begin copy sql "
 cp ../sql/ry_20210908.sql ./mysql/db
-cp ../sql/ry_config_20211118.sql ./mysql/db
+cp ../sql/ry_fund.sql ./mysql/db
+cp ../sql/ry_fund_config.sql ./mysql/db
+cp ../sql/ry_config_20220114.sql ./mysql/db
 
 # copy html
 echo "begin copy html "
@@ -39,3 +41,6 @@ cp ../ruoyi-modules/ruoyi-job/target/ruoyi-modules-job.jar ./ruoyi/modules/job/j
 echo "begin copy ruoyi-modules-gen "
 cp ../ruoyi-modules/ruoyi-gen/target/ruoyi-modules-gen.jar ./ruoyi/modules/gen/jar
 
+
+echo "begin copy ruoyi-modules-fund "
+cp ../ruoyi-modules/ruoyi-fund/target/ruoyi-modules-fund.jar ./ruoyi/modules/fund/jar

@@ -1,0 +1,82 @@
+资金管理模块变更清单
+
+变更文件数: 68
+
+ADD  FUND_MODULE_README.md
+ADD  bin/run-modules-fund.bat
+MOD  docker/copy.sh
+MOD  docker/docker-compose.yml
+ADD  docker/ruoyi/modules/fund/dockerfile
+ADD  docker/ruoyi/modules/fund/jar/readme.txt
+ADD  ruoyi-api/ruoyi-api-system/src/main/java/com/ruoyi/system/api/RemoteFundSupportService.java
+ADD  ruoyi-api/ruoyi-api-system/src/main/java/com/ruoyi/system/api/domain/FundDeptOption.java
+ADD  ruoyi-api/ruoyi-api-system/src/main/java/com/ruoyi/system/api/domain/FundUserOption.java
+MOD  ruoyi-modules/pom.xml
+ADD  ruoyi-modules/ruoyi-fund/pom.xml
+ADD  ruoyi-modules/ruoyi-fund/src/main/java/com/ruoyi/fund/RuoYiFundApplication.java
+ADD  ruoyi-modules/ruoyi-fund/src/main/java/com/ruoyi/fund/constant/FundConstants.java
+ADD  ruoyi-modules/ruoyi-fund/src/main/java/com/ruoyi/fund/controller/FundAllocationController.java
+ADD  ruoyi-modules/ruoyi-fund/src/main/java/com/ruoyi/fund/controller/FundBudgetController.java
+ADD  ruoyi-modules/ruoyi-fund/src/main/java/com/ruoyi/fund/controller/FundOrgController.java
+ADD  ruoyi-modules/ruoyi-fund/src/main/java/com/ruoyi/fund/controller/FundTopicController.java
+ADD  ruoyi-modules/ruoyi-fund/src/main/java/com/ruoyi/fund/controller/FundUseController.java
+ADD  ruoyi-modules/ruoyi-fund/src/main/java/com/ruoyi/fund/domain/FundAllocationPlan.java
+ADD  ruoyi-modules/ruoyi-fund/src/main/java/com/ruoyi/fund/domain/FundAllocationRecord.java
+ADD  ruoyi-modules/ruoyi-fund/src/main/java/com/ruoyi/fund/domain/FundProjectBudget.java
+ADD  ruoyi-modules/ruoyi-fund/src/main/java/com/ruoyi/fund/domain/FundTopic.java
+ADD  ruoyi-modules/ruoyi-fund/src/main/java/com/ruoyi/fund/domain/FundTopicDept.java
+ADD  ruoyi-modules/ruoyi-fund/src/main/java/com/ruoyi/fund/domain/FundUsePlan.java
+ADD  ruoyi-modules/ruoyi-fund/src/main/java/com/ruoyi/fund/domain/FundUseRecord.java
+ADD  ruoyi-modules/ruoyi-fund/src/main/java/com/ruoyi/fund/domain/dto/FundAssignRequest.java
+ADD  ruoyi-modules/ruoyi-fund/src/main/java/com/ruoyi/fund/domain/dto/FundFinishRequest.java
+ADD  ruoyi-modules/ruoyi-fund/src/main/java/com/ruoyi/fund/domain/vo/FundFinishCheckVo.java
+ADD  ruoyi-modules/ruoyi-fund/src/main/java/com/ruoyi/fund/domain/vo/FundOverviewVo.java
+ADD  ruoyi-modules/ruoyi-fund/src/main/java/com/ruoyi/fund/mapper/FundAllocationPlanMapper.java
+ADD  ruoyi-modules/ruoyi-fund/src/main/java/com/ruoyi/fund/mapper/FundAllocationRecordMapper.java
+ADD  ruoyi-modules/ruoyi-fund/src/main/java/com/ruoyi/fund/mapper/FundProjectBudgetMapper.java
+ADD  ruoyi-modules/ruoyi-fund/src/main/java/com/ruoyi/fund/mapper/FundTopicDeptMapper.java
+ADD  ruoyi-modules/ruoyi-fund/src/main/java/com/ruoyi/fund/mapper/FundTopicMapper.java
+ADD  ruoyi-modules/ruoyi-fund/src/main/java/com/ruoyi/fund/mapper/FundUsePlanMapper.java
+ADD  ruoyi-modules/ruoyi-fund/src/main/java/com/ruoyi/fund/mapper/FundUseRecordMapper.java
+ADD  ruoyi-modules/ruoyi-fund/src/main/java/com/ruoyi/fund/service/IFundAllocationService.java
+ADD  ruoyi-modules/ruoyi-fund/src/main/java/com/ruoyi/fund/service/IFundBudgetService.java
+ADD  ruoyi-modules/ruoyi-fund/src/main/java/com/ruoyi/fund/service/IFundOrgService.java
+ADD  ruoyi-modules/ruoyi-fund/src/main/java/com/ruoyi/fund/service/IFundTopicService.java
+ADD  ruoyi-modules/ruoyi-fund/src/main/java/com/ruoyi/fund/service/IFundUseService.java
+ADD  ruoyi-modules/ruoyi-fund/src/main/java/com/ruoyi/fund/service/impl/FundAllocationServiceImpl.java
+ADD  ruoyi-modules/ruoyi-fund/src/main/java/com/ruoyi/fund/service/impl/FundBudgetServiceImpl.java
+ADD  ruoyi-modules/ruoyi-fund/src/main/java/com/ruoyi/fund/service/impl/FundOrgServiceImpl.java
+ADD  ruoyi-modules/ruoyi-fund/src/main/java/com/ruoyi/fund/service/impl/FundTopicServiceImpl.java
+ADD  ruoyi-modules/ruoyi-fund/src/main/java/com/ruoyi/fund/service/impl/FundUseServiceImpl.java
+ADD  ruoyi-modules/ruoyi-fund/src/main/java/com/ruoyi/fund/util/FundSecurityUtils.java
+ADD  ruoyi-modules/ruoyi-fund/src/main/resources/banner.txt
+ADD  ruoyi-modules/ruoyi-fund/src/main/resources/bootstrap.yml
+ADD  ruoyi-modules/ruoyi-fund/src/main/resources/logback.xml
+ADD  ruoyi-modules/ruoyi-fund/src/main/resources/mapper/fund/FundAllocationPlanMapper.xml
+ADD  ruoyi-modules/ruoyi-fund/src/main/resources/mapper/fund/FundAllocationRecordMapper.xml
+ADD  ruoyi-modules/ruoyi-fund/src/main/resources/mapper/fund/FundProjectBudgetMapper.xml
+ADD  ruoyi-modules/ruoyi-fund/src/main/resources/mapper/fund/FundTopicDeptMapper.xml
+ADD  ruoyi-modules/ruoyi-fund/src/main/resources/mapper/fund/FundTopicMapper.xml
+ADD  ruoyi-modules/ruoyi-fund/src/main/resources/mapper/fund/FundUsePlanMapper.xml
+ADD  ruoyi-modules/ruoyi-fund/src/main/resources/mapper/fund/FundUseRecordMapper.xml
+ADD  ruoyi-modules/ruoyi-system/src/main/java/com/ruoyi/system/controller/SysFundSupportController.java
+ADD  ruoyi-ui/src/api/fund/allocation.js
+ADD  ruoyi-ui/src/api/fund/budget.js
+ADD  ruoyi-ui/src/api/fund/org.js
+ADD  ruoyi-ui/src/api/fund/topic.js
+ADD  ruoyi-ui/src/api/fund/use.js
+ADD  ruoyi-ui/src/views/fund/allocation/index.vue
+ADD  ruoyi-ui/src/views/fund/budget/index.vue
+ADD  ruoyi-ui/src/views/fund/use/index.vue
+ADD  sql/ry_fund.sql
+ADD  sql/ry_fund_config.sql
+
+核心业务规则:
+- 拨付计划有效金额合计不得超过课题总资金。
+- 新增/修改拨付计划与降低总资金均在后端事务中校验。
+- 同课题总资金行使用 FOR UPDATE 锁，降低并发超配风险。
+- 拨付/使用计划结束后锁定，结束金额由后端根据实际记录重新汇总。
+
+说明:
+- 当前上传仓库没有原业务“课题”主数据，fund_topic/fund_topic_dept 仅作适配层。
+- 完整接入说明见 FUND_MODULE_README.md。

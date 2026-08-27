@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.fund.mapper.FundTopicMapper">
+  <resultMap id="FundTopicResult" type="FundTopic">
+    <id property="topicId" column="topic_id"/><result property="topicName" column="topic_name"/>
+    <result property="leadDeptId" column="lead_dept_id"/><result property="leadDeptName" column="lead_dept_name"/>
+    <result property="leaderUserId" column="leader_user_id"/><result property="leaderUserName" column="leader_user_name"/>
+    <result property="status" column="status"/><result property="remark" column="remark"/>
+    <result property="createBy" column="create_by"/><result property="createTime" column="create_time"/>
+    <result property="updateBy" column="update_by"/><result property="updateTime" column="update_time"/>
+  </resultMap>
+  <sql id="base">select topic_id,topic_name,lead_dept_id,lead_dept_name,leader_user_id,leader_user_name,status,remark,create_by,create_time,update_by,update_time from fund_topic where del_flag='0'</sql>
+  <select id="selectFundTopicById" resultMap="FundTopicResult"><include refid="base"/> and topic_id=#{topicId}</select>
+  <select id="selectFundTopicList" resultMap="FundTopicResult"><include refid="base"/><if test="topicName!=null and topicName!=''"> and topic_name like concat('%',#{topicName},'%')</if><if test="status!=null and status!=''"> and status=#{status}</if> order by topic_id desc</select>
+  <insert id="insertFundTopic" parameterType="FundTopic" useGeneratedKeys="true" keyProperty="topicId">insert into fund_topic(topic_name,lead_dept_id,lead_dept_name,leader_user_id,leader_user_name,status,remark,create_by,create_time) values(#{topicName},#{leadDeptId},#{leadDeptName},#{leaderUserId},#{leaderUserName},#{status},#{remark},#{createBy},sysdate())</insert>
+  <update id="updateFundTopic" parameterType="FundTopic">update fund_topic set topic_name=#{topicName},lead_dept_id=#{leadDeptId},lead_dept_name=#{leadDeptName},leader_user_id=#{leaderUserId},leader_user_name=#{leaderUserName},status=#{status},remark=#{remark},update_by=#{updateBy},update_time=sysdate() where topic_id=#{topicId} and del_flag='0'</update>
+  <update id="deleteFundTopicById">update fund_topic set del_flag='2',update_time=sysdate() where topic_id=#{topicId}</update>
+</mapper>
