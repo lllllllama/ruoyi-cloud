@@ -8,7 +8,7 @@ public interface FundUsePlanMapper {
     FundUsePlan selectForUpdate(Long usePlanId);
     List<FundUsePlan> selectList(FundUsePlan query);
     int countByTopicId(Long topicId);
-    BigDecimal sumPlanAmount(Long topicId);
+    BigDecimal sumPlanAmount(@Param("topicId") Long topicId, @Param("excludeUsePlanId") Long excludeUsePlanId);
     int insert(FundUsePlan plan);
     int update(FundUsePlan plan);
     int finish(@Param("usePlanId")Long usePlanId,@Param("actual")BigDecimal actual,@Param("difference")BigDecimal difference,@Param("finishType")String finishType,@Param("finishUserId")Long finishUserId,@Param("updateBy")String updateBy);
