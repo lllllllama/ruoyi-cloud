@@ -13,8 +13,8 @@ import com.ruoyi.research.domain.TaskDeliverable;
 import com.ruoyi.research.domain.TaskInfo;
 import com.ruoyi.research.mapper.TaskDeliverableMapper;
 import com.ruoyi.research.mapper.TaskInfoMapper;
-import com.ruoyi.research.service.ResearchPermissionService;
 import com.ruoyi.research.service.TaskDeliverableService;
+import com.ruoyi.research.service.TaskPermissionService;
 
 @Service
 public class TaskDeliverableServiceImpl implements TaskDeliverableService
@@ -30,7 +30,7 @@ public class TaskDeliverableServiceImpl implements TaskDeliverableService
     private TaskInfoMapper taskMapper;
 
     @Autowired
-    private ResearchPermissionService permissionService;
+    private TaskPermissionService permissionService;
 
     @Override
     public TaskDeliverable selectById(Long deliverableId)
@@ -162,17 +162,11 @@ public class TaskDeliverableServiceImpl implements TaskDeliverableService
 
     private void assertCanView(Long groupId)
     {
-        if (!permissionService.canViewGroup(groupId, SecurityUtils.getUserId()))
-        {
-            throw new ServiceException("No permission to view this deliverable");
-        }
+        permissionService.assertCanViewGroup(groupId, SecurityUtils.getUserId());
     }
 
     private void assertCanMaintain(Long groupId)
     {
-        if (!permissionService.isGroupLeader(groupId, SecurityUtils.getUserId()))
-        {
-            throw new ServiceException("Only administrators or research group leaders may maintain deliverables");
-        }
+        permissionService.assertCanMaintainGroup(groupId, SecurityUtils.getUserId());
     }
 }

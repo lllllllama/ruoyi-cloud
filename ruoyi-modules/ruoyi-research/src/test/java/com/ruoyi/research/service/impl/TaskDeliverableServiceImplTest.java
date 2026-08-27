@@ -17,7 +17,7 @@ import com.ruoyi.research.domain.TaskDeliverable;
 import com.ruoyi.research.domain.TaskInfo;
 import com.ruoyi.research.mapper.TaskDeliverableMapper;
 import com.ruoyi.research.mapper.TaskInfoMapper;
-import com.ruoyi.research.service.ResearchPermissionService;
+import com.ruoyi.research.service.TaskPermissionService;
 
 @RunWith(MockitoJUnitRunner.class)
 public class TaskDeliverableServiceImplTest
@@ -25,14 +25,13 @@ public class TaskDeliverableServiceImplTest
     @InjectMocks private TaskDeliverableServiceImpl service;
     @Mock private TaskDeliverableMapper deliverableMapper;
     @Mock private TaskInfoMapper taskMapper;
-    @Mock private ResearchPermissionService permissionService;
+    @Mock private TaskPermissionService permissionService;
 
     @Before
     public void setUp()
     {
         SecurityContextHolder.setUserId("10");
         SecurityContextHolder.setUserName("leader");
-        when(permissionService.isGroupLeader(1L, 10L)).thenReturn(true);
         TaskInfo task = new TaskInfo();
         task.setTaskId(20L);
         task.setGroupId(1L);

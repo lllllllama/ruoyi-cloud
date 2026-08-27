@@ -10,7 +10,7 @@ import com.ruoyi.research.domain.TaskSubmission;
 import com.ruoyi.research.domain.TaskSubmissionAudit;
 import com.ruoyi.research.mapper.TaskSubmissionAuditMapper;
 import com.ruoyi.research.mapper.TaskSubmissionMapper;
-import com.ruoyi.research.service.ResearchPermissionService;
+import com.ruoyi.research.service.TaskPermissionService;
 import com.ruoyi.research.service.TaskSubmissionAuditService;
 
 @Service
@@ -23,7 +23,7 @@ public class TaskSubmissionAuditServiceImpl implements TaskSubmissionAuditServic
     private TaskSubmissionMapper submissionMapper;
 
     @Autowired
-    private ResearchPermissionService permissionService;
+    private TaskPermissionService permissionService;
 
     @Override
     public List<TaskSubmissionAudit> selectBySubmissionId(Long submissionId)
@@ -33,14 +33,7 @@ public class TaskSubmissionAuditServiceImpl implements TaskSubmissionAuditServic
         {
             throw new ServiceException("Deliverable submission does not exist");
         }
-        Long userId = SecurityUtils.getUserId();
-        if (!userId.equals(submission.getSubmitUserId())
-                && !permissionService.isGroupLeader(submission.getGroupId(), userId)
-                && !("3".equals(submission.getStatus())
-                    && permissionService.isGroupMember(submission.getGroupId(), userId)))
-        {
-            throw new ServiceException("No permission to view this submission audit history");
-        }
+        permissionService.assertCanViewSubmission(submission, SecurityUtils.getUserId());
         return auditMapper.selectBySubmissionId(submissionId);
     }
 

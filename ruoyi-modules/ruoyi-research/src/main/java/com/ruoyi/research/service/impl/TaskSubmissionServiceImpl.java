@@ -13,7 +13,6 @@ import com.ruoyi.research.mapper.TaskDeliverableMapper;
 import com.ruoyi.research.mapper.TaskInfoMapper;
 import com.ruoyi.research.mapper.TaskSubmissionMapper;
 import com.ruoyi.research.service.ResearchOrgService;
-import com.ruoyi.research.service.ResearchPermissionService;
 import com.ruoyi.research.service.TaskPermissionService;
 import com.ruoyi.research.service.TaskAttachmentService;
 import com.ruoyi.research.service.TaskCompletionService;
@@ -41,9 +40,6 @@ public class TaskSubmissionServiceImpl implements TaskSubmissionService
 
     @Autowired
     private TaskPermissionService taskPermissionService;
-
-    @Autowired
-    private ResearchPermissionService researchPermissionService;
 
     @Autowired
     private ResearchOrgService orgService;
@@ -256,18 +252,12 @@ public class TaskSubmissionServiceImpl implements TaskSubmissionService
 
     private void assertOwner(TaskSubmission submission)
     {
-        if (!SecurityUtils.getUserId().equals(submission.getSubmitUserId()))
-        {
-            throw new ServiceException("Only the submitter may modify this submission");
-        }
+        taskPermissionService.assertSubmissionOwner(submission, SecurityUtils.getUserId());
     }
 
     private void assertAuditor(TaskSubmission submission)
     {
-        if (!researchPermissionService.isGroupLeader(submission.getGroupId(), SecurityUtils.getUserId()))
-        {
-            throw new ServiceException("Only administrators or research group leaders may audit submissions");
-        }
+        taskPermissionService.assertCanAuditSubmission(submission, SecurityUtils.getUserId());
     }
 
     private void requireStatus(TaskSubmission submission, String expected, String message)
@@ -293,14 +283,7 @@ public class TaskSubmissionServiceImpl implements TaskSubmissionService
 
     private void assertCanView(TaskSubmission submission)
     {
-        Long userId = SecurityUtils.getUserId();
-        if (!userId.equals(submission.getSubmitUserId())
-                && !researchPermissionService.isGroupLeader(submission.getGroupId(), userId)
-                && !(STATUS_ARCHIVED.equals(submission.getStatus())
-                        && researchPermissionService.isGroupMember(submission.getGroupId(), userId)))
-        {
-            throw new ServiceException("No permission to view this submission");
-        }
+        taskPermissionService.assertCanViewSubmission(submission, SecurityUtils.getUserId());
     }
 
     private void enrichUserNames(TaskSubmission submission)

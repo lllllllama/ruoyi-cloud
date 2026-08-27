@@ -17,8 +17,8 @@ import com.ruoyi.research.domain.TaskAttachment;
 import com.ruoyi.research.domain.TaskSubmission;
 import com.ruoyi.research.mapper.TaskAttachmentMapper;
 import com.ruoyi.research.mapper.TaskSubmissionMapper;
-import com.ruoyi.research.service.ResearchPermissionService;
 import com.ruoyi.research.service.TaskAttachmentService;
+import com.ruoyi.research.service.TaskPermissionService;
 import com.ruoyi.system.api.RemoteFileService;
 
 @Service
@@ -27,7 +27,6 @@ public class TaskAttachmentServiceImpl implements TaskAttachmentService
     private static final int MAX_ATTACHMENTS = 20;
     private static final String STATUS_DRAFT = "0";
     private static final String STATUS_REJECTED = "2";
-    private static final String STATUS_ARCHIVED = "3";
 
     @Autowired
     private TaskAttachmentMapper attachmentMapper;
@@ -36,7 +35,7 @@ public class TaskAttachmentServiceImpl implements TaskAttachmentService
     private TaskSubmissionMapper submissionMapper;
 
     @Autowired
-    private ResearchPermissionService permissionService;
+    private TaskPermissionService permissionService;
 
     @Autowired
     private RemoteFileService remoteFileService;
@@ -137,10 +136,7 @@ public class TaskAttachmentServiceImpl implements TaskAttachmentService
 
     private void assertEditableOwner(TaskSubmission submission)
     {
-        if (!SecurityUtils.getUserId().equals(submission.getSubmitUserId()))
-        {
-            throw new ServiceException("Only the submitter may modify submission attachments");
-        }
+        permissionService.assertSubmissionOwner(submission, SecurityUtils.getUserId());
         if (!STATUS_DRAFT.equals(submission.getStatus()) && !STATUS_REJECTED.equals(submission.getStatus()))
         {
             throw new ServiceException("Attachments are locked after submission");
@@ -149,18 +145,7 @@ public class TaskAttachmentServiceImpl implements TaskAttachmentService
 
     private void assertCanView(TaskSubmission submission)
     {
-        Long userId = SecurityUtils.getUserId();
-        if (userId.equals(submission.getSubmitUserId())
-                || permissionService.isGroupLeader(submission.getGroupId(), userId))
-        {
-            return;
-        }
-        if (STATUS_ARCHIVED.equals(submission.getStatus())
-                && permissionService.isGroupMember(submission.getGroupId(), userId))
-        {
-            return;
-        }
-        throw new ServiceException("No permission to access this task attachment");
+        permissionService.assertCanViewSubmission(submission, SecurityUtils.getUserId());
     }
 
     private TaskSubmission requireSubmission(Long submissionId)

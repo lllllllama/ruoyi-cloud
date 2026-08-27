@@ -23,6 +23,7 @@ import com.ruoyi.fund.domain.vo.FundFinishCheckVo;
 import com.ruoyi.fund.mapper.FundProjectBudgetMapper;
 import com.ruoyi.fund.mapper.FundUsePlanMapper;
 import com.ruoyi.fund.mapper.FundUseRecordMapper;
+import com.ruoyi.fund.service.FundPermissionService;
 import com.ruoyi.fund.service.IFundAttachmentService;
 import com.ruoyi.fund.service.IFundOperationLogService;
 import com.ruoyi.fund.service.IFundOrgService;
@@ -39,6 +40,7 @@ public class FundUseServiceImplTest
     @Mock private IFundOrgService org;
     @Mock private IFundOperationLogService audit;
     @Mock private IFundAttachmentService attachmentService;
+    @Mock private FundPermissionService permissionService;
 
     private final AtomicLong ids = new AtomicLong(200);
 
@@ -94,15 +96,17 @@ public class FundUseServiceImplTest
         login(10L);
         service.finishCheck(10L);
         login(11L);
+        doThrow(new ServiceException("无计划操作权限"))
+                .when(permissionService).assertCanOperateUse(plan, 11L);
         assertDenied(() -> service.finishCheck(10L));
 
         plan.setResponsibleUserId(null);
         login(12L);
         service.finishCheck(10L);
-        verify(researchService).assertGroupMember(1L, 12L);
+        verify(permissionService).assertCanOperateUse(plan, 12L);
         login(13L);
         doThrow(new ServiceException("无课题访问权限"))
-                .when(researchService).assertGroupMember(1L, 13L);
+                .when(permissionService).assertCanOperateUse(plan, 13L);
         assertDenied(() -> service.finishCheck(10L));
     }
 

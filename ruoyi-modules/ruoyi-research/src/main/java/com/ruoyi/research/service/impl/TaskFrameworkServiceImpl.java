@@ -18,8 +18,8 @@ import com.ruoyi.research.mapper.ResearchGroupUnitMapper;
 import com.ruoyi.research.mapper.TaskFrameworkMapper;
 import com.ruoyi.research.mapper.TaskFrameworkUnitMapper;
 import com.ruoyi.research.service.ResearchOrgService;
-import com.ruoyi.research.service.ResearchPermissionService;
 import com.ruoyi.research.service.TaskFrameworkService;
+import com.ruoyi.research.service.TaskPermissionService;
 
 @Service
 public class TaskFrameworkServiceImpl implements TaskFrameworkService
@@ -39,7 +39,7 @@ public class TaskFrameworkServiceImpl implements TaskFrameworkService
     private ResearchGroupUnitMapper groupUnitMapper;
 
     @Autowired
-    private ResearchPermissionService permissionService;
+    private TaskPermissionService permissionService;
 
     @Autowired
     private ResearchOrgService orgService;
@@ -205,17 +205,11 @@ public class TaskFrameworkServiceImpl implements TaskFrameworkService
 
     private void assertCanView(Long groupId)
     {
-        if (!permissionService.canViewGroup(groupId, SecurityUtils.getUserId()))
-        {
-            throw new ServiceException("No permission to view this annual task framework");
-        }
+        permissionService.assertCanViewGroup(groupId, SecurityUtils.getUserId());
     }
 
     private void assertCanMaintain(Long groupId)
     {
-        if (!permissionService.isGroupLeader(groupId, SecurityUtils.getUserId()))
-        {
-            throw new ServiceException("Only administrators or research group leaders may maintain annual task frameworks");
-        }
+        permissionService.assertCanMaintainGroup(groupId, SecurityUtils.getUserId());
     }
 }

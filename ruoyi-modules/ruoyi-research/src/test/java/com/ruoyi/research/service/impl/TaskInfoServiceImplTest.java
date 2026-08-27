@@ -20,7 +20,7 @@ import com.ruoyi.research.domain.TaskFramework;
 import com.ruoyi.research.domain.TaskInfo;
 import com.ruoyi.research.mapper.TaskFrameworkMapper;
 import com.ruoyi.research.mapper.TaskInfoMapper;
-import com.ruoyi.research.service.ResearchPermissionService;
+import com.ruoyi.research.service.TaskPermissionService;
 
 @RunWith(MockitoJUnitRunner.class)
 public class TaskInfoServiceImplTest
@@ -28,15 +28,13 @@ public class TaskInfoServiceImplTest
     @InjectMocks private TaskInfoServiceImpl service;
     @Mock private TaskInfoMapper taskMapper;
     @Mock private TaskFrameworkMapper frameworkMapper;
-    @Mock private ResearchPermissionService permissionService;
+    @Mock private TaskPermissionService permissionService;
 
     @Before
     public void setUp()
     {
         SecurityContextHolder.setUserId("10");
         SecurityContextHolder.setUserName("leader");
-        when(permissionService.isGroupLeader(1L, 10L)).thenReturn(true);
-        when(permissionService.canViewGroup(1L, 10L)).thenReturn(true);
         TaskFramework framework = new TaskFramework();
         framework.setFrameworkId(100L);
         framework.setGroupId(1L);

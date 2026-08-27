@@ -23,6 +23,7 @@ import com.ruoyi.fund.domain.vo.FundFinishCheckVo;
 import com.ruoyi.fund.mapper.FundAllocationPlanMapper;
 import com.ruoyi.fund.mapper.FundAllocationRecordMapper;
 import com.ruoyi.fund.mapper.FundProjectBudgetMapper;
+import com.ruoyi.fund.service.FundPermissionService;
 import com.ruoyi.fund.service.IFundAttachmentService;
 import com.ruoyi.fund.service.IFundOperationLogService;
 import com.ruoyi.fund.service.IFundOrgService;
@@ -41,6 +42,7 @@ public class FundAllocationServiceImplTest
     @Mock private IFundResearchService researchService;
     @Mock private IFundOperationLogService audit;
     @Mock private IFundAttachmentService attachmentService;
+    @Mock private FundPermissionService permissionService;
 
     private final AtomicLong ids = new AtomicLong(100);
 
@@ -100,13 +102,16 @@ public class FundAllocationServiceImplTest
         login(10L);
         service.finishCheck(10L);
         login(11L);
+        doThrow(new ServiceException("无计划操作权限"))
+                .when(permissionService).assertCanOperateAllocation(plan, 11L);
         assertDenied(() -> service.finishCheck(10L));
 
         plan.setResponsibleUserId(null);
-        when(researchService.isGroupUnitMember(1L, 2L, 12L)).thenReturn(true);
         login(12L);
         service.finishCheck(10L);
         login(13L);
+        doThrow(new ServiceException("无计划操作权限"))
+                .when(permissionService).assertCanOperateAllocation(plan, 13L);
         assertDenied(() -> service.finishCheck(10L));
     }
 
@@ -138,7 +143,6 @@ public class FundAllocationServiceImplTest
     {
         FundAllocationPlan plan = runningPlan();
         when(planMapper.selectForUpdate(10L)).thenReturn(plan);
-        when(researchService.isUnitManager(1L, 2L, 20L)).thenReturn(true);
         when(researchService.isGroupUnitMember(1L, 2L, 21L)).thenReturn(true);
         FundUserOption user = new FundUserOption();
         user.setUserName("responsible");
@@ -149,7 +153,7 @@ public class FundAllocationServiceImplTest
         login(20L);
         assertEquals(1, service.assign(10L, 21L));
 
-        verify(researchService).isUnitManager(1L, 2L, 20L);
+        verify(permissionService).assertCanAssignAllocation(plan, 20L);
         verify(researchService).isGroupUnitMember(1L, 2L, 21L);
     }
 

@@ -15,8 +15,8 @@ import com.ruoyi.research.domain.TaskFramework;
 import com.ruoyi.research.domain.TaskInfo;
 import com.ruoyi.research.mapper.TaskFrameworkMapper;
 import com.ruoyi.research.mapper.TaskInfoMapper;
-import com.ruoyi.research.service.ResearchPermissionService;
 import com.ruoyi.research.service.TaskInfoService;
+import com.ruoyi.research.service.TaskPermissionService;
 
 @Service
 public class TaskInfoServiceImpl implements TaskInfoService
@@ -30,7 +30,7 @@ public class TaskInfoServiceImpl implements TaskInfoService
     private TaskFrameworkMapper frameworkMapper;
 
     @Autowired
-    private ResearchPermissionService permissionService;
+    private TaskPermissionService permissionService;
 
     @Override
     public TaskInfo selectById(Long taskId)
@@ -278,17 +278,11 @@ public class TaskInfoServiceImpl implements TaskInfoService
 
     private void assertCanView(Long groupId)
     {
-        if (!permissionService.canViewGroup(groupId, SecurityUtils.getUserId()))
-        {
-            throw new ServiceException("No permission to view this task");
-        }
+        permissionService.assertCanViewGroup(groupId, SecurityUtils.getUserId());
     }
 
     private void assertCanMaintain(Long groupId)
     {
-        if (!permissionService.isGroupLeader(groupId, SecurityUtils.getUserId()))
-        {
-            throw new ServiceException("Only administrators or research group leaders may maintain tasks");
-        }
+        permissionService.assertCanMaintainGroup(groupId, SecurityUtils.getUserId());
     }
 }

@@ -26,7 +26,6 @@ import com.ruoyi.research.mapper.TaskDeliverableMapper;
 import com.ruoyi.research.mapper.TaskInfoMapper;
 import com.ruoyi.research.mapper.TaskSubmissionMapper;
 import com.ruoyi.research.service.ResearchOrgService;
-import com.ruoyi.research.service.ResearchPermissionService;
 import com.ruoyi.research.service.TaskPermissionService;
 import com.ruoyi.research.service.TaskAttachmentService;
 import com.ruoyi.research.service.TaskCompletionService;
@@ -41,7 +40,6 @@ public class TaskSubmissionServiceImplTest
     @Mock private TaskDeliverableMapper deliverableMapper;
     @Mock private TaskInfoMapper taskMapper;
     @Mock private TaskPermissionService taskPermissionService;
-    @Mock private ResearchPermissionService researchPermissionService;
     @Mock private ResearchOrgService orgService;
     @Mock private TaskAttachmentService attachmentService;
     @Mock private TaskSubmissionAuditService auditService;
@@ -160,7 +158,6 @@ public class TaskSubmissionServiceImplTest
     {
         TaskSubmission pending = storedSubmission("1");
         when(submissionMapper.selectForUpdate(40L)).thenReturn(pending);
-        when(researchPermissionService.isGroupLeader(1L, 10L)).thenReturn(true);
         when(deliverableMapper.countArchivedSubmissions(30L)).thenReturn(2);
         when(submissionMapper.approve(40L, 0, 10L, "submitter")).thenReturn(1);
         service.approve(40L, "ok");
@@ -181,7 +178,6 @@ public class TaskSubmissionServiceImplTest
     {
         TaskSubmission pending = storedSubmission("1");
         when(submissionMapper.selectForUpdate(40L)).thenReturn(pending);
-        when(researchPermissionService.isGroupLeader(1L, 10L)).thenReturn(true);
         try
         {
             service.reject(40L, "  ");
@@ -205,7 +201,6 @@ public class TaskSubmissionServiceImplTest
         TaskSubmission archived = storedSubmission("3");
         archived.setSubmitUserId(99L);
         when(submissionMapper.selectById(40L)).thenReturn(archived);
-        when(researchPermissionService.isGroupMember(1L, 10L)).thenReturn(true);
         assertEquals(archived, service.selectById(40L));
 
         TaskSubmission update = input();
@@ -227,7 +222,8 @@ public class TaskSubmissionServiceImplTest
     {
         TaskSubmission archived = storedSubmission("3");
         when(submissionMapper.selectForUpdate(40L)).thenReturn(archived);
-        when(researchPermissionService.isGroupLeader(1L, 10L)).thenReturn(false);
+        doThrow(new ServiceException("Only administrators or research group leaders may audit submissions"))
+                .when(taskPermissionService).assertCanAuditSubmission(archived, 10L);
         try
         {
             service.cancelApprove(40L, null);

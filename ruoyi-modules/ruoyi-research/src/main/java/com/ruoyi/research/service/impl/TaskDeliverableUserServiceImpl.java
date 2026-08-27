@@ -15,8 +15,8 @@ import com.ruoyi.research.domain.TaskDeliverableUser;
 import com.ruoyi.research.mapper.TaskDeliverableMapper;
 import com.ruoyi.research.mapper.TaskDeliverableUserMapper;
 import com.ruoyi.research.service.ResearchOrgService;
-import com.ruoyi.research.service.ResearchPermissionService;
 import com.ruoyi.research.service.TaskDeliverableUserService;
+import com.ruoyi.research.service.TaskPermissionService;
 import com.ruoyi.system.api.domain.FundUserOption;
 
 @Service
@@ -29,7 +29,7 @@ public class TaskDeliverableUserServiceImpl implements TaskDeliverableUserServic
     private TaskDeliverableMapper deliverableMapper;
 
     @Autowired
-    private ResearchPermissionService permissionService;
+    private TaskPermissionService permissionService;
 
     @Autowired
     private ResearchOrgService orgService;
@@ -62,10 +62,7 @@ public class TaskDeliverableUserServiceImpl implements TaskDeliverableUserServic
         for (Long userId : uniqueUserIds)
         {
             orgService.getUser(userId);
-            if (!permissionService.isGroupMember(deliverable.getGroupId(), userId))
-            {
-                throw new ServiceException("Deliverable assignee must be an active research group member");
-            }
+            permissionService.assertGroupMember(deliverable.getGroupId(), userId);
             TaskDeliverableUser relation = new TaskDeliverableUser();
             relation.setGroupId(deliverable.getGroupId());
             relation.setDeliverableId(deliverableId);
@@ -112,17 +109,11 @@ public class TaskDeliverableUserServiceImpl implements TaskDeliverableUserServic
 
     private void assertCanView(Long groupId)
     {
-        if (!permissionService.canViewGroup(groupId, SecurityUtils.getUserId()))
-        {
-            throw new ServiceException("No permission to view deliverable assignees");
-        }
+        permissionService.assertCanViewGroup(groupId, SecurityUtils.getUserId());
     }
 
     private void assertCanMaintain(Long groupId)
     {
-        if (!permissionService.isGroupLeader(groupId, SecurityUtils.getUserId()))
-        {
-            throw new ServiceException("Only administrators or research group leaders may assign deliverable owners");
-        }
+        permissionService.assertCanMaintainGroup(groupId, SecurityUtils.getUserId());
     }
 }

@@ -16,12 +16,10 @@ import com.ruoyi.common.core.constant.SecurityConstants;
 import com.ruoyi.common.core.exception.ServiceException;
 import com.ruoyi.common.core.utils.file.FileUtils;
 import com.ruoyi.common.security.utils.SecurityUtils;
-import com.ruoyi.fund.constant.FundAuditConstants;
 import com.ruoyi.fund.domain.FundAttachment;
 import com.ruoyi.fund.mapper.FundAttachmentMapper;
+import com.ruoyi.fund.service.FundPermissionService;
 import com.ruoyi.fund.service.IFundAttachmentService;
-import com.ruoyi.fund.service.IFundResearchService;
-import com.ruoyi.fund.util.FundSecurityUtils;
 import com.ruoyi.system.api.RemoteFileService;
 
 @Service
@@ -36,7 +34,7 @@ public class FundAttachmentServiceImpl implements IFundAttachmentService
     private FundAttachmentMapper mapper;
 
     @Autowired
-    private IFundResearchService researchService;
+    private FundPermissionService permissionService;
 
     @Autowired
     private RemoteFileService remoteFileService;
@@ -91,16 +89,8 @@ public class FundAttachmentServiceImpl implements IFundAttachmentService
             throw new ServiceException("附件不存在");
         }
         Long userId = SecurityUtils.getUserId();
-        if (FundAuditConstants.USE_RECORD.equals(attachment.getBusinessType())
-                && !FundSecurityUtils.isSystemAdmin())
-        {
-            researchService.assertGroupMember(attachment.getGroupId(), userId);
-        }
-        else if (!FundAuditConstants.ALLOCATION_RECORD.equals(attachment.getBusinessType())
-                && !FundAuditConstants.USE_RECORD.equals(attachment.getBusinessType()))
-        {
-            throw new ServiceException("不支持的附件业务类型");
-        }
+        permissionService.assertCanDownloadAttachment(
+                attachment.getGroupId(), attachment.getBusinessType(), userId);
 
         ResponseEntity<byte[]> remote = remoteFileService.download(
                 attachment.getFileUrl(), SecurityConstants.INNER);

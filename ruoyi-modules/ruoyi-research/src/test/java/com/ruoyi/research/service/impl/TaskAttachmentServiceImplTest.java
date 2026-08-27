@@ -4,6 +4,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.when;
 import java.util.Collections;
 import org.junit.After;
@@ -19,7 +21,7 @@ import com.ruoyi.research.domain.TaskAttachment;
 import com.ruoyi.research.domain.TaskSubmission;
 import com.ruoyi.research.mapper.TaskAttachmentMapper;
 import com.ruoyi.research.mapper.TaskSubmissionMapper;
-import com.ruoyi.research.service.ResearchPermissionService;
+import com.ruoyi.research.service.TaskPermissionService;
 import com.ruoyi.system.api.RemoteFileService;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -28,7 +30,7 @@ public class TaskAttachmentServiceImplTest
     @InjectMocks private TaskAttachmentServiceImpl service;
     @Mock private TaskAttachmentMapper attachmentMapper;
     @Mock private TaskSubmissionMapper submissionMapper;
-    @Mock private ResearchPermissionService permissionService;
+    @Mock private TaskPermissionService permissionService;
     @Mock private RemoteFileService remoteFileService;
 
     @Before
@@ -64,10 +66,11 @@ public class TaskAttachmentServiceImplTest
         when(submissionMapper.selectById(40L)).thenReturn(submission("3"));
         when(attachmentMapper.selectBySubmissionId(40L)).thenReturn(Collections.emptyList());
         login(20L);
-        when(permissionService.isGroupMember(1L, 20L)).thenReturn(true);
         service.selectBySubmissionId(40L);
 
         login(21L);
+        doThrow(new ServiceException("No permission to view this submission"))
+                .when(permissionService).assertCanViewSubmission(any(TaskSubmission.class), eq(21L));
         try
         {
             service.selectBySubmissionId(40L);
