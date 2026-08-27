@@ -21,7 +21,7 @@ public class ResearchPermissionServiceImpl implements ResearchPermissionService
     @Override
     public boolean isGroupMember(Long groupId, Long userId)
     {
-        return isAdmin() || valid(groupId, userId) && permissionMapper.countActiveMember(groupId, userId) > 0;
+        return isAdmin(userId) || valid(groupId, userId) && permissionMapper.countActiveMember(groupId, userId) > 0;
     }
 
     @Override
@@ -45,14 +45,14 @@ public class ResearchPermissionServiceImpl implements ResearchPermissionService
     @Override
     public boolean isGroupUnitMember(Long groupId, Long deptId, Long userId)
     {
-        return isAdmin() || valid(groupId, userId) && deptId != null
+        return isAdmin(userId) || valid(groupId, userId) && deptId != null
                 && permissionMapper.countActiveUnitMember(groupId, deptId, userId) > 0;
     }
 
     @Override
     public boolean isUnitManager(Long groupId, Long deptId, Long userId)
     {
-        return isAdmin() || valid(groupId, userId) && deptId != null
+        return isAdmin(userId) || valid(groupId, userId) && deptId != null
                 && permissionMapper.countActiveUnitManager(groupId, deptId, userId) > 0;
     }
 
@@ -65,7 +65,7 @@ public class ResearchPermissionServiceImpl implements ResearchPermissionService
     @Override
     public List<Long> getAllowedGroupIds(Long userId)
     {
-        if (isAdmin())
+        if (isAdmin(userId))
         {
             return permissionMapper.selectAllActiveGroupIds();
         }
@@ -78,7 +78,7 @@ public class ResearchPermissionServiceImpl implements ResearchPermissionService
 
     private boolean hasRole(Long groupId, Long userId, String role)
     {
-        return isAdmin() || valid(groupId, userId)
+        return isAdmin(userId) || valid(groupId, userId)
                 && permissionMapper.countActiveRole(groupId, userId, role) > 0;
     }
 
@@ -87,8 +87,8 @@ public class ResearchPermissionServiceImpl implements ResearchPermissionService
         return groupId != null && userId != null;
     }
 
-    private boolean isAdmin()
+    private boolean isAdmin(Long userId)
     {
-        return ResearchSecurityUtils.isSystemAdmin();
+        return ResearchSecurityUtils.isSystemAdmin(userId);
     }
 }

@@ -30,6 +30,15 @@
                  when 'MEMBER' then 2 else 3 end, id
     </select>
 
+    <select id="selectActiveByGroupAndDept" resultMap="ResearchGroupMemberResult">
+        select id, group_id, user_id, dept_id, member_role, status, join_time, leave_time,
+               create_by, create_time, update_time
+        from biz_research_group_member
+        where group_id = #{groupId} and dept_id = #{deptId} and status = '0'
+        order by case member_role when 'LEADER' then 0 when 'CORE' then 1
+                 when 'MEMBER' then 2 else 3 end, id
+    </select>
+
     <select id="countSameRole" resultType="int">
         select count(1) from biz_research_group_member
         where group_id = #{groupId} and user_id = #{userId} and member_role = #{memberRole}

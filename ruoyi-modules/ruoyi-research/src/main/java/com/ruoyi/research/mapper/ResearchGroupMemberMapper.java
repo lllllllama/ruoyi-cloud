@@ -10,6 +10,9 @@ public interface ResearchGroupMemberMapper
 
     List<ResearchGroupMember> selectByGroupId(Long groupId);
 
+    List<ResearchGroupMember> selectActiveByGroupAndDept(@Param("groupId") Long groupId,
+            @Param("deptId") Long deptId);
+
     int countSameRole(@Param("groupId") Long groupId, @Param("userId") Long userId,
             @Param("memberRole") String memberRole, @Param("excludeId") Long excludeId);
 

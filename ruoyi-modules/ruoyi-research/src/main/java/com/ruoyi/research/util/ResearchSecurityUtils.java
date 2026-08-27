@@ -11,11 +11,17 @@ public final class ResearchSecurityUtils
 
     public static boolean isSystemAdmin()
     {
-        if (SecurityUtils.isAdmin(SecurityUtils.getUserId()))
+        return isSystemAdmin(SecurityUtils.getUserId());
+    }
+
+    public static boolean isSystemAdmin(Long userId)
+    {
+        if (SecurityUtils.isAdmin(userId))
         {
             return true;
         }
         LoginUser loginUser = SecurityUtils.getLoginUser();
-        return loginUser != null && loginUser.getRoles() != null && loginUser.getRoles().contains("admin");
+        return userId != null && userId.equals(SecurityUtils.getUserId()) && loginUser != null
+                && loginUser.getRoles() != null && loginUser.getRoles().contains("admin");
     }
 }
