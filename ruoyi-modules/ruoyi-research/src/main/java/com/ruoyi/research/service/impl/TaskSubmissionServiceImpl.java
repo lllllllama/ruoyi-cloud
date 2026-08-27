@@ -16,6 +16,7 @@ import com.ruoyi.research.service.ResearchOrgService;
 import com.ruoyi.research.service.ResearchPermissionService;
 import com.ruoyi.research.service.TaskPermissionService;
 import com.ruoyi.research.service.TaskAttachmentService;
+import com.ruoyi.research.service.TaskSubmissionAuditService;
 import com.ruoyi.research.service.TaskSubmissionService;
 import com.ruoyi.research.util.ResearchSecurityUtils;
 import com.ruoyi.system.api.domain.FundUserOption;
@@ -24,7 +25,9 @@ import com.ruoyi.system.api.domain.FundUserOption;
 public class TaskSubmissionServiceImpl implements TaskSubmissionService
 {
     private static final String STATUS_DRAFT = "0";
+    private static final String STATUS_PENDING = "1";
     private static final String STATUS_REJECTED = "2";
+    private static final String STATUS_ARCHIVED = "3";
 
     @Autowired
     private TaskSubmissionMapper submissionMapper;
@@ -46,6 +49,9 @@ public class TaskSubmissionServiceImpl implements TaskSubmissionService
 
     @Autowired
     private TaskAttachmentService attachmentService;
+
+    @Autowired
+    private TaskSubmissionAuditService auditService;
 
     @Override
     public TaskSubmission selectById(Long submissionId)
@@ -138,6 +144,69 @@ public class TaskSubmissionServiceImpl implements TaskSubmissionService
         return rows;
     }
 
+    @Override
+    @Transactional
+    public void submit(Long submissionId)
+    {
+        TaskSubmission submission = requireSubmissionForUpdate(submissionId);
+        assertOwner(submission);
+        requireStatus(submission, STATUS_DRAFT, "Only a draft submission may be submitted");
+        taskPermissionService.assertCanSubmitDeliverable(submission.getDeliverableId(), SecurityUtils.getUserId());
+        assertTransition(submissionMapper.submit(submissionId, submission.getVersion(), SecurityUtils.getUsername()));
+        auditService.record(submission, "SUBMIT", STATUS_DRAFT, STATUS_PENDING, null);
+    }
+
+    @Override
+    @Transactional
+    public void approve(Long submissionId, String opinion)
+    {
+        TaskSubmission submission = requireSubmissionForUpdate(submissionId);
+        assertAuditor(submission);
+        requireStatus(submission, STATUS_PENDING, "Only a pending submission may be approved");
+        assertTransition(submissionMapper.approve(submissionId, submission.getVersion(),
+                SecurityUtils.getUserId(), SecurityUtils.getUsername()));
+        auditService.record(submission, "APPROVE", STATUS_PENDING, STATUS_ARCHIVED, trimOpinion(opinion));
+    }
+
+    @Override
+    @Transactional
+    public void reject(Long submissionId, String opinion)
+    {
+        TaskSubmission submission = requireSubmissionForUpdate(submissionId);
+        assertAuditor(submission);
+        requireStatus(submission, STATUS_PENDING, "Only a pending submission may be rejected");
+        String requiredOpinion = trimOpinion(opinion);
+        if (requiredOpinion == null || requiredOpinion.isEmpty())
+        {
+            throw new ServiceException("Rejection opinion is required");
+        }
+        assertTransition(submissionMapper.reject(submissionId, submission.getVersion(), SecurityUtils.getUsername()));
+        auditService.record(submission, "REJECT", STATUS_PENDING, STATUS_REJECTED, requiredOpinion);
+    }
+
+    @Override
+    @Transactional
+    public void resubmit(Long submissionId, String opinion)
+    {
+        TaskSubmission submission = requireSubmissionForUpdate(submissionId);
+        assertOwner(submission);
+        requireStatus(submission, STATUS_REJECTED, "Only a rejected submission may be resubmitted");
+        taskPermissionService.assertCanSubmitDeliverable(submission.getDeliverableId(), SecurityUtils.getUserId());
+        assertTransition(submissionMapper.resubmit(submissionId, submission.getVersion(), SecurityUtils.getUsername()));
+        auditService.record(submission, "RESUBMIT", STATUS_REJECTED, STATUS_PENDING, trimOpinion(opinion));
+    }
+
+    @Override
+    @Transactional
+    public void cancelApprove(Long submissionId, String opinion)
+    {
+        TaskSubmission submission = requireSubmissionForUpdate(submissionId);
+        assertAuditor(submission);
+        requireStatus(submission, STATUS_ARCHIVED, "Only an archived submission may have approval cancelled");
+        assertTransition(submissionMapper.cancelApprove(submissionId, submission.getVersion(), SecurityUtils.getUsername()));
+        auditService.record(submission, "CANCEL_APPROVE", STATUS_ARCHIVED, STATUS_PENDING, trimOpinion(opinion));
+    }
+
     private void normalize(TaskSubmission submission)
     {
         if (submission.getSubmissionName() == null || submission.getSubmissionName().trim().isEmpty())
@@ -161,6 +230,35 @@ public class TaskSubmissionServiceImpl implements TaskSubmissionService
         {
             throw new ServiceException("Only the submitter may modify this submission");
         }
+    }
+
+    private void assertAuditor(TaskSubmission submission)
+    {
+        if (!researchPermissionService.isGroupLeader(submission.getGroupId(), SecurityUtils.getUserId()))
+        {
+            throw new ServiceException("Only administrators or research group leaders may audit submissions");
+        }
+    }
+
+    private void requireStatus(TaskSubmission submission, String expected, String message)
+    {
+        if (!expected.equals(submission.getStatus()))
+        {
+            throw new ServiceException(message);
+        }
+    }
+
+    private void assertTransition(int rows)
+    {
+        if (rows == 0)
+        {
+            throw new ServiceException("Submission state changed concurrently; refresh and retry");
+        }
+    }
+
+    private String trimOpinion(String opinion)
+    {
+        return opinion == null ? null : opinion.trim();
     }
 
     private void assertCanView(TaskSubmission submission)
@@ -196,6 +294,16 @@ public class TaskSubmissionServiceImpl implements TaskSubmissionService
     private TaskSubmission requireSubmission(Long submissionId)
     {
         TaskSubmission submission = submissionMapper.selectById(submissionId);
+        if (submission == null)
+        {
+            throw new ServiceException("Deliverable submission does not exist");
+        }
+        return submission;
+    }
+
+    private TaskSubmission requireSubmissionForUpdate(Long submissionId)
+    {
+        TaskSubmission submission = submissionMapper.selectForUpdate(submissionId);
         if (submission == null)
         {
             throw new ServiceException("Deliverable submission does not exist");

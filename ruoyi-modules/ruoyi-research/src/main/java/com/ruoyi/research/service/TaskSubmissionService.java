@@ -14,4 +14,14 @@ public interface TaskSubmissionService
     int updateDraft(TaskSubmission submission);
 
     int deleteDraft(Long submissionId);
+
+    void submit(Long submissionId);
+
+    void approve(Long submissionId, String opinion);
+
+    void reject(Long submissionId, String opinion);
+
+    void resubmit(Long submissionId, String opinion);
+
+    void cancelApprove(Long submissionId, String opinion);
 }

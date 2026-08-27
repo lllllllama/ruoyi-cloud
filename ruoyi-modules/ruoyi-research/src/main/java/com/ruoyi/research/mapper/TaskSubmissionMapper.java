@@ -8,6 +8,8 @@ public interface TaskSubmissionMapper
 {
     TaskSubmission selectById(Long submissionId);
 
+    TaskSubmission selectForUpdate(Long submissionId);
+
     List<TaskSubmission> selectList(@Param("query") TaskSubmission query,
             @Param("userId") Long userId, @Param("admin") boolean admin);
 
@@ -17,4 +19,19 @@ public interface TaskSubmissionMapper
 
     int deleteDraft(@Param("submissionId") Long submissionId,
             @Param("version") Integer version, @Param("updateBy") String updateBy);
+
+    int submit(@Param("submissionId") Long submissionId, @Param("version") Integer version,
+            @Param("updateBy") String updateBy);
+
+    int resubmit(@Param("submissionId") Long submissionId, @Param("version") Integer version,
+            @Param("updateBy") String updateBy);
+
+    int approve(@Param("submissionId") Long submissionId, @Param("version") Integer version,
+            @Param("archiveUserId") Long archiveUserId, @Param("updateBy") String updateBy);
+
+    int reject(@Param("submissionId") Long submissionId, @Param("version") Integer version,
+            @Param("updateBy") String updateBy);
+
+    int cancelApprove(@Param("submissionId") Long submissionId, @Param("version") Integer version,
+            @Param("updateBy") String updateBy);
 }

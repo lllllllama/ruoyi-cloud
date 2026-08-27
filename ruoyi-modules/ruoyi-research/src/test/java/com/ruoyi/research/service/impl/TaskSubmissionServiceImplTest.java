@@ -7,6 +7,7 @@ import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.doThrow;
+import static org.mockito.Mockito.verify;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -25,6 +26,8 @@ import com.ruoyi.research.mapper.TaskSubmissionMapper;
 import com.ruoyi.research.service.ResearchOrgService;
 import com.ruoyi.research.service.ResearchPermissionService;
 import com.ruoyi.research.service.TaskPermissionService;
+import com.ruoyi.research.service.TaskAttachmentService;
+import com.ruoyi.research.service.TaskSubmissionAuditService;
 import com.ruoyi.system.api.domain.FundUserOption;
 
 @RunWith(MockitoJUnitRunner.class)
@@ -37,6 +40,8 @@ public class TaskSubmissionServiceImplTest
     @Mock private TaskPermissionService taskPermissionService;
     @Mock private ResearchPermissionService researchPermissionService;
     @Mock private ResearchOrgService orgService;
+    @Mock private TaskAttachmentService attachmentService;
+    @Mock private TaskSubmissionAuditService auditService;
 
     @Before
     public void setUp()
@@ -131,11 +136,73 @@ public class TaskSubmissionServiceImplTest
         }
     }
 
+    @Test
+    public void submitUsesExplicitDraftToPendingTransition()
+    {
+        TaskSubmission submission = storedSubmission("0");
+        when(submissionMapper.selectForUpdate(40L)).thenReturn(submission);
+        when(submissionMapper.submit(40L, 0, "submitter")).thenReturn(1);
+        service.submit(40L);
+        verify(submissionMapper).submit(40L, 0, "submitter");
+        verify(auditService).record(submission, "SUBMIT", "0", "1", null);
+    }
+
+    @Test
+    public void leaderCanApproveAndCancelApproveThroughExplicitTransitions()
+    {
+        TaskSubmission pending = storedSubmission("1");
+        when(submissionMapper.selectForUpdate(40L)).thenReturn(pending);
+        when(researchPermissionService.isGroupLeader(1L, 10L)).thenReturn(true);
+        when(submissionMapper.approve(40L, 0, 10L, "submitter")).thenReturn(1);
+        service.approve(40L, "ok");
+        verify(auditService).record(pending, "APPROVE", "1", "3", "ok");
+
+        TaskSubmission archived = storedSubmission("3");
+        when(submissionMapper.selectForUpdate(40L)).thenReturn(archived);
+        when(submissionMapper.cancelApprove(40L, 0, "submitter")).thenReturn(1);
+        service.cancelApprove(40L, null);
+        verify(auditService).record(archived, "CANCEL_APPROVE", "3", "1", null);
+    }
+
+    @Test
+    public void rejectRequiresOpinionAndRejectedOwnerCanResubmit()
+    {
+        TaskSubmission pending = storedSubmission("1");
+        when(submissionMapper.selectForUpdate(40L)).thenReturn(pending);
+        when(researchPermissionService.isGroupLeader(1L, 10L)).thenReturn(true);
+        try
+        {
+            service.reject(40L, "  ");
+            fail("Reject must require an opinion");
+        }
+        catch (ServiceException expected)
+        {
+            assertTrue(expected.getMessage().contains("opinion"));
+        }
+
+        TaskSubmission rejected = storedSubmission("2");
+        when(submissionMapper.selectForUpdate(40L)).thenReturn(rejected);
+        when(submissionMapper.resubmit(40L, 0, "submitter")).thenReturn(1);
+        service.resubmit(40L, "updated");
+        verify(auditService).record(rejected, "RESUBMIT", "2", "1", "updated");
+    }
+
     private TaskSubmission input()
     {
         TaskSubmission submission = new TaskSubmission();
         submission.setDeliverableId(30L);
         submission.setSubmissionName("Submission");
+        return submission;
+    }
+
+    private TaskSubmission storedSubmission(String status)
+    {
+        TaskSubmission submission = input();
+        submission.setSubmissionId(40L);
+        submission.setGroupId(1L);
+        submission.setSubmitUserId(10L);
+        submission.setStatus(status);
+        submission.setVersion(0);
         return submission;
     }
 }

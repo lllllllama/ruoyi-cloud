@@ -43,6 +43,12 @@
         and s.submission_id = #{submissionId}
     </select>
 
+    <select id="selectForUpdate" resultMap="TaskSubmissionResult">
+        <include refid="selectTaskSubmission"/>
+        and s.submission_id = #{submissionId}
+        for update
+    </select>
+
     <select id="selectList" resultMap="TaskSubmissionResult">
         <include refid="selectTaskSubmission"/>
         <if test="!admin">
@@ -91,6 +97,46 @@
         update task_submission
         set del_flag = '2', update_by = #{updateBy}, update_time = sysdate(), version = version + 1
         where submission_id = #{submissionId} and status in ('0', '2')
+          and del_flag = '0' and version = #{version}
+    </update>
+
+    <update id="submit">
+        update task_submission
+        set status = '1', submit_time = sysdate(), update_by = #{updateBy},
+            update_time = sysdate(), version = version + 1
+        where submission_id = #{submissionId} and status = '0'
+          and del_flag = '0' and version = #{version}
+    </update>
+
+    <update id="resubmit">
+        update task_submission
+        set status = '1', submit_time = sysdate(), archive_user_id = null, archive_time = null,
+            update_by = #{updateBy}, update_time = sysdate(), version = version + 1
+        where submission_id = #{submissionId} and status = '2'
+          and del_flag = '0' and version = #{version}
+    </update>
+
+    <update id="approve">
+        update task_submission
+        set status = '3', archive_user_id = #{archiveUserId}, archive_time = sysdate(),
+            update_by = #{updateBy}, update_time = sysdate(), version = version + 1
+        where submission_id = #{submissionId} and status = '1'
+          and del_flag = '0' and version = #{version}
+    </update>
+
+    <update id="reject">
+        update task_submission
+        set status = '2', archive_user_id = null, archive_time = null,
+            update_by = #{updateBy}, update_time = sysdate(), version = version + 1
+        where submission_id = #{submissionId} and status = '1'
+          and del_flag = '0' and version = #{version}
+    </update>
+
+    <update id="cancelApprove">
+        update task_submission
+        set status = '1', archive_user_id = null, archive_time = null,
+            update_by = #{updateBy}, update_time = sysdate(), version = version + 1
+        where submission_id = #{submissionId} and status = '3'
           and del_flag = '0' and version = #{version}
     </update>
 </mapper>

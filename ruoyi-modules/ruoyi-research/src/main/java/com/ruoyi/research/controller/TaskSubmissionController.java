@@ -20,6 +20,7 @@ import com.ruoyi.common.log.enums.BusinessType;
 import com.ruoyi.common.security.annotation.RequiresPermissions;
 import com.ruoyi.research.domain.TaskSubmission;
 import com.ruoyi.research.domain.TaskAttachment;
+import com.ruoyi.research.domain.dto.TaskAuditRequest;
 import com.ruoyi.research.service.TaskAttachmentService;
 import com.ruoyi.research.service.TaskSubmissionAuditService;
 import com.ruoyi.research.service.TaskSubmissionService;
@@ -111,5 +112,49 @@ public class TaskSubmissionController extends BaseController
     public AjaxResult remove(@PathVariable("id") Long id)
     {
         return toAjax(submissionService.deleteDraft(id));
+    }
+
+    @RequiresPermissions("task:submission:add")
+    @PutMapping("/{id}/submit")
+    public AjaxResult submit(@PathVariable("id") Long id)
+    {
+        submissionService.submit(id);
+        return AjaxResult.success();
+    }
+
+    @RequiresPermissions("task:submission:add")
+    @PutMapping("/{id}/resubmit")
+    public AjaxResult resubmit(@PathVariable("id") Long id,
+            @Validated @RequestBody(required = false) TaskAuditRequest request)
+    {
+        submissionService.resubmit(id, request == null ? null : request.getOpinion());
+        return AjaxResult.success();
+    }
+
+    @RequiresPermissions("task:submission:audit")
+    @PutMapping("/{id}/approve")
+    public AjaxResult approve(@PathVariable("id") Long id,
+            @Validated @RequestBody(required = false) TaskAuditRequest request)
+    {
+        submissionService.approve(id, request == null ? null : request.getOpinion());
+        return AjaxResult.success();
+    }
+
+    @RequiresPermissions("task:submission:audit")
+    @PutMapping("/{id}/reject")
+    public AjaxResult reject(@PathVariable("id") Long id,
+            @Validated @RequestBody TaskAuditRequest request)
+    {
+        submissionService.reject(id, request.getOpinion());
+        return AjaxResult.success();
+    }
+
+    @RequiresPermissions("task:submission:cancelAudit")
+    @PutMapping("/{id}/cancel-approve")
+    public AjaxResult cancelApprove(@PathVariable("id") Long id,
+            @Validated @RequestBody(required = false) TaskAuditRequest request)
+    {
+        submissionService.cancelApprove(id, request == null ? null : request.getOpinion());
+        return AjaxResult.success();
     }
 }
