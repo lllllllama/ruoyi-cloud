@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.research.mapper.TaskFrameworkUnitMapper">
+    <resultMap id="TaskFrameworkUnitResult" type="com.ruoyi.research.domain.TaskFrameworkUnit">
+        <id property="id" column="id"/>
+        <result property="frameworkId" column="framework_id"/>
+        <result property="groupId" column="group_id"/>
+        <result property="deptId" column="dept_id"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+
+    <select id="selectByFrameworkId" resultMap="TaskFrameworkUnitResult">
+        select id, framework_id, group_id, dept_id, create_by, create_time
+        from task_framework_unit
+        where framework_id = #{frameworkId}
+        order by id
+    </select>
+
+    <insert id="batchInsert">
+        insert into task_framework_unit
+        (framework_id, group_id, dept_id, create_by, create_time)
+        values
+        <foreach collection="list" item="unit" separator=",">
+            (#{unit.frameworkId}, #{unit.groupId}, #{unit.deptId}, #{unit.createBy}, sysdate())
+        </foreach>
+    </insert>
+
+    <delete id="deleteByFrameworkId">
+        delete from task_framework_unit where framework_id = #{frameworkId}
+    </delete>
+
+    <delete id="deleteByFrameworkIds">
+        delete from task_framework_unit where framework_id in
+        <foreach collection="array" item="frameworkId" open="(" separator="," close=")">
+            #{frameworkId}
+        </foreach>
+    </delete>
+</mapper>

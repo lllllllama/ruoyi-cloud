@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.research.mapper.TaskFrameworkMapper">
+    <resultMap id="TaskFrameworkResult" type="com.ruoyi.research.domain.TaskFramework">
+        <id property="frameworkId" column="framework_id"/>
+        <result property="groupId" column="group_id"/>
+        <result property="frameworkName" column="framework_name"/>
+        <result property="year" column="year"/>
+        <result property="leadDeptId" column="lead_dept_id"/>
+        <result property="overallGoal" column="overall_goal"/>
+        <result property="status" column="status"/>
+        <result property="sort" column="sort"/>
+        <result property="groupName" column="group_name"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+        <result property="updateBy" column="update_by"/>
+        <result property="updateTime" column="update_time"/>
+        <result property="remark" column="remark"/>
+    </resultMap>
+
+    <sql id="selectTaskFramework">
+        select f.framework_id, f.group_id, f.framework_name, f.year, f.lead_dept_id,
+               f.overall_goal, f.status, f.sort, f.create_by, f.create_time,
+               f.update_by, f.update_time, f.remark, g.group_name
+        from task_framework f
+        inner join biz_research_group g on g.group_id = f.group_id and g.del_flag = '0'
+        where f.del_flag = '0'
+    </sql>
+
+    <select id="selectById" resultMap="TaskFrameworkResult">
+        <include refid="selectTaskFramework"/>
+        and f.framework_id = #{frameworkId}
+    </select>
+
+    <select id="selectList" resultMap="TaskFrameworkResult">
+        <include refid="selectTaskFramework"/>
+        and f.group_id in
+        <foreach collection="allowedGroupIds" item="groupId" open="(" separator="," close=")">
+            #{groupId}
+        </foreach>
+        <if test="query.frameworkId != null">
+            and f.framework_id = #{query.frameworkId}
+        </if>
+        <if test="query.groupId != null">
+            and f.group_id = #{query.groupId}
+        </if>
+        <if test="query.frameworkName != null and query.frameworkName != ''">
+            and f.framework_name like concat('%', #{query.frameworkName}, '%')
+        </if>
+        <if test="query.year != null">
+            and f.year = #{query.year}
+        </if>
+        <if test="query.leadDeptId != null">
+            and f.lead_dept_id = #{query.leadDeptId}
+        </if>
+        <if test="query.status != null and query.status != ''">
+            and f.status = #{query.status}
+        </if>
+        order by f.year desc, f.sort asc, f.framework_id desc
+    </select>
+
+    <insert id="insert" parameterType="com.ruoyi.research.domain.TaskFramework"
+            useGeneratedKeys="true" keyProperty="frameworkId">
+        insert into task_framework
+        (group_id, framework_name, year, lead_dept_id, overall_goal, status, sort,
+         create_by, create_time, remark, del_flag)
+        values
+        (#{groupId}, #{frameworkName}, #{year}, #{leadDeptId}, #{overallGoal}, #{status}, #{sort},
+         #{createBy}, sysdate(), #{remark}, '0')
+    </insert>
+
+    <update id="update" parameterType="com.ruoyi.research.domain.TaskFramework">
+        update task_framework
+        set framework_name = #{frameworkName},
+            year = #{year},
+            lead_dept_id = #{leadDeptId},
+            overall_goal = #{overallGoal},
+            status = #{status},
+            sort = #{sort},
+            update_by = #{updateBy},
+            update_time = sysdate(),
+            remark = #{remark}
+        where framework_id = #{frameworkId} and group_id = #{groupId} and del_flag = '0'
+    </update>
+
+    <update id="deleteByIds">
+        update task_framework
+        set del_flag = '2', update_by = #{updateBy}, update_time = sysdate()
+        where framework_id in
+        <foreach collection="frameworkIds" item="frameworkId" open="(" separator="," close=")">
+            #{frameworkId}
+        </foreach>
+        and del_flag = '0'
+    </update>
+</mapper>
