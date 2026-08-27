@@ -1,0 +1,61 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.research.mapper.TaskMyMapper">
+    <resultMap id="MyTaskResult" type="com.ruoyi.research.domain.vo.MyTaskVo">
+        <id property="deliverableId" column="deliverable_id"/>
+        <result property="taskId" column="task_id"/>
+        <result property="taskName" column="task_name"/>
+        <result property="deliverableName" column="deliverable_name"/>
+        <result property="groupId" column="group_id"/>
+        <result property="groupName" column="group_name"/>
+        <result property="requiredNum" column="required_num"/>
+        <result property="archivedNum" column="archived_num"/>
+        <result property="pendingNum" column="pending_num"/>
+        <result property="deadline" column="deadline"/>
+        <result property="status" column="status"/>
+    </resultMap>
+
+    <select id="selectMyTasks" resultMap="MyTaskResult">
+        select t.task_id, t.task_name,
+               d.deliverable_id, d.deliverable_name,
+               d.group_id, g.group_name,
+               d.required_num, d.archived_num, d.deadline, d.status,
+               (select count(1)
+                  from task_submission s
+                 where s.deliverable_id = d.deliverable_id
+                   and s.status = '1' and s.del_flag = '0') as pending_num
+        from task_deliverable d
+        inner join task_info t on t.task_id = d.task_id and t.del_flag = '0'
+        inner join biz_research_group g
+                on g.group_id = d.group_id and g.status = '0' and g.del_flag = '0'
+        where d.del_flag = '0' and d.status != '3'
+          and exists (
+              select 1 from biz_research_group_member active_member
+              where active_member.group_id = d.group_id
+                and active_member.user_id = #{userId}
+                and active_member.status = '0'
+          )
+          and (
+              exists (
+                  select 1 from task_deliverable_user assigned
+                  where assigned.deliverable_id = d.deliverable_id
+                    and assigned.user_id = #{userId}
+              )
+              or (
+                  not exists (
+                      select 1 from task_deliverable_user any_assignee
+                      where any_assignee.deliverable_id = d.deliverable_id
+                  )
+                  and exists (
+                      select 1 from biz_research_group_member privileged_member
+                      where privileged_member.group_id = d.group_id
+                        and privileged_member.user_id = #{userId}
+                        and privileged_member.status = '0'
+                        and privileged_member.member_role in ('LEADER', 'CORE')
+                  )
+              )
+          )
+        order by case when d.deadline is null then 1 else 0 end,
+                 d.deadline asc, d.group_id, t.task_id, d.sort, d.deliverable_id
+    </select>
+</mapper>

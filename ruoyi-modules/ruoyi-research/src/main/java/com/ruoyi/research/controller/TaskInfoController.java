@@ -16,8 +16,10 @@ import com.ruoyi.common.core.web.domain.AjaxResult;
 import com.ruoyi.common.log.annotation.Log;
 import com.ruoyi.common.log.enums.BusinessType;
 import com.ruoyi.common.security.annotation.RequiresPermissions;
+import com.ruoyi.common.security.utils.SecurityUtils;
 import com.ruoyi.research.domain.TaskInfo;
 import com.ruoyi.research.service.TaskInfoService;
+import com.ruoyi.research.service.TaskMyService;
 
 @RestController
 @RequestMapping("/task")
@@ -25,6 +27,16 @@ public class TaskInfoController extends BaseController
 {
     @Autowired
     private TaskInfoService taskService;
+
+    @Autowired
+    private TaskMyService taskMyService;
+
+    @RequiresPermissions("task:submission:add")
+    @GetMapping("/my")
+    public AjaxResult myTasks()
+    {
+        return AjaxResult.success(taskMyService.selectMyTasks(SecurityUtils.getUserId()));
+    }
 
     @RequiresPermissions("task:info:list")
     @GetMapping("/list")
