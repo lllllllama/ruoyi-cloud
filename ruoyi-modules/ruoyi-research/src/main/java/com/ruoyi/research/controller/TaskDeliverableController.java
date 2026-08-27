@@ -79,7 +79,8 @@ public class TaskDeliverableController extends BaseController
     @PostMapping
     public AjaxResult add(@Validated @RequestBody TaskDeliverable deliverable)
     {
-        return toAjax(deliverableService.insert(deliverable));
+        return deliverableService.insert(deliverable) > 0
+                ? AjaxResult.success(deliverable) : AjaxResult.error();
     }
 
     @RequiresPermissions("task:deliverable:add")
