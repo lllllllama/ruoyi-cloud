@@ -55,8 +55,8 @@ public class ResearchGroupServiceImpl implements ResearchGroupService
     @Transactional
     public int insert(ResearchGroup group)
     {
-        validateGroupCode(group);
         normalizeDefaults(group);
+        validateGroupCode(group);
         group.setCreateBy(SecurityUtils.getUsername());
         int rows = groupMapper.insertResearchGroup(group);
         saveUnits(group);
@@ -71,8 +71,8 @@ public class ResearchGroupServiceImpl implements ResearchGroupService
         {
             throw new ServiceException("Research group does not exist");
         }
-        validateGroupCode(group);
         normalizeDefaults(group);
+        validateGroupCode(group);
         group.setUpdateBy(SecurityUtils.getUsername());
         int rows = groupMapper.updateResearchGroup(group);
         unitMapper.deleteByGroupId(group.getGroupId());
