@@ -17,7 +17,9 @@ import com.ruoyi.common.log.annotation.Log;
 import com.ruoyi.common.log.enums.BusinessType;
 import com.ruoyi.common.security.annotation.RequiresPermissions;
 import com.ruoyi.research.domain.TaskDeliverable;
+import com.ruoyi.research.domain.dto.TaskDeliverableAssignRequest;
 import com.ruoyi.research.service.TaskDeliverableService;
+import com.ruoyi.research.service.TaskDeliverableUserService;
 
 @RestController
 @RequestMapping("/deliverable")
@@ -25,6 +27,9 @@ public class TaskDeliverableController extends BaseController
 {
     @Autowired
     private TaskDeliverableService deliverableService;
+
+    @Autowired
+    private TaskDeliverableUserService deliverableUserService;
 
     @RequiresPermissions("task:info:list")
     @GetMapping("/list")
@@ -39,6 +44,22 @@ public class TaskDeliverableController extends BaseController
     public AjaxResult get(@PathVariable("id") Long id)
     {
         return AjaxResult.success(deliverableService.selectById(id));
+    }
+
+    @RequiresPermissions("task:info:list")
+    @GetMapping("/{id}/assignees")
+    public AjaxResult assignees(@PathVariable("id") Long id)
+    {
+        return AjaxResult.success(deliverableUserService.selectByDeliverableId(id));
+    }
+
+    @RequiresPermissions("task:deliverable:assign")
+    @Log(title = "Deliverable assignees", businessType = BusinessType.UPDATE)
+    @PutMapping("/{id}/assignees")
+    public AjaxResult assign(@PathVariable("id") Long id,
+            @Validated @RequestBody TaskDeliverableAssignRequest request)
+    {
+        return toAjax(deliverableUserService.assign(id, request.getUserIds()));
     }
 
     @RequiresPermissions("task:deliverable:add")

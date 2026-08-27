@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.research.mapper.TaskDeliverableUserMapper">
+    <resultMap id="TaskDeliverableUserResult" type="com.ruoyi.research.domain.TaskDeliverableUser">
+        <id property="id" column="id"/>
+        <result property="groupId" column="group_id"/>
+        <result property="deliverableId" column="deliverable_id"/>
+        <result property="userId" column="user_id"/>
+        <result property="assignUserId" column="assign_user_id"/>
+        <result property="assignTime" column="assign_time"/>
+    </resultMap>
+
+    <select id="selectByDeliverableId" resultMap="TaskDeliverableUserResult">
+        select id, group_id, deliverable_id, user_id, assign_user_id, assign_time
+        from task_deliverable_user
+        where deliverable_id = #{deliverableId}
+        order by id
+    </select>
+
+    <select id="countByDeliverableId" resultType="int">
+        select count(1) from task_deliverable_user
+        where deliverable_id = #{deliverableId}
+    </select>
+
+    <select id="countByDeliverableAndUser" resultType="int">
+        select count(1) from task_deliverable_user
+        where deliverable_id = #{deliverableId} and user_id = #{userId}
+    </select>
+
+    <insert id="batchInsert">
+        insert into task_deliverable_user
+        (group_id, deliverable_id, user_id, assign_user_id, assign_time)
+        values
+        <foreach collection="list" item="relation" separator=",">
+            (#{relation.groupId}, #{relation.deliverableId}, #{relation.userId},
+             #{relation.assignUserId}, #{relation.assignTime})
+        </foreach>
+    </insert>
+
+    <delete id="deleteByDeliverableId">
+        delete from task_deliverable_user where deliverable_id = #{deliverableId}
+    </delete>
+</mapper>
