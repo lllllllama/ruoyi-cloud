@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.research.mapper.ResearchGroupUnitMapper">
+    <resultMap id="ResearchGroupUnitResult" type="com.ruoyi.research.domain.ResearchGroupUnit">
+        <id property="id" column="id"/>
+        <result property="groupId" column="group_id"/>
+        <result property="deptId" column="dept_id"/>
+        <result property="unitType" column="unit_type"/>
+        <result property="managerUserId" column="manager_user_id"/>
+        <result property="status" column="status"/>
+        <result property="createBy" column="create_by"/>
+        <result property="createTime" column="create_time"/>
+    </resultMap>
+
+    <select id="selectByGroupId" resultMap="ResearchGroupUnitResult">
+        select id, group_id, dept_id, unit_type, manager_user_id, status, create_by, create_time
+        from biz_research_group_unit
+        where group_id = #{groupId}
+        order by case when unit_type = 'LEAD' then 0 else 1 end, id
+    </select>
+
+    <insert id="batchInsert">
+        insert into biz_research_group_unit
+        (group_id, dept_id, unit_type, manager_user_id, status, create_by, create_time)
+        values
+        <foreach collection="list" item="unit" separator=",">
+            (#{unit.groupId}, #{unit.deptId}, #{unit.unitType}, #{unit.managerUserId},
+             #{unit.status}, #{unit.createBy}, sysdate())
+        </foreach>
+    </insert>
+
+    <delete id="deleteByGroupId">
+        delete from biz_research_group_unit where group_id = #{groupId}
+    </delete>
+
+    <delete id="deleteByGroupIds">
+        delete from biz_research_group_unit where group_id in
+        <foreach collection="array" item="groupId" open="(" separator="," close=")">
+            #{groupId}
+        </foreach>
+    </delete>
+</mapper>
