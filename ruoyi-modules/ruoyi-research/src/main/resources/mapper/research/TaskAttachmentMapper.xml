@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.ruoyi.research.mapper.TaskAttachmentMapper">
+    <resultMap id="TaskAttachmentResult" type="com.ruoyi.research.domain.TaskAttachment">
+        <id property="attachmentId" column="attachment_id"/>
+        <result property="groupId" column="group_id"/>
+        <result property="submissionId" column="submission_id"/>
+        <result property="fileName" column="file_name"/>
+        <result property="originalName" column="original_name"/>
+        <result property="fileUrl" column="file_url"/>
+        <result property="fileSize" column="file_size"/>
+        <result property="fileType" column="file_type"/>
+        <result property="uploadUserId" column="upload_user_id"/>
+        <result property="uploadTime" column="upload_time"/>
+        <result property="delFlag" column="del_flag"/>
+    </resultMap>
+
+    <sql id="columns">
+        attachment_id, group_id, submission_id, file_name, original_name, file_url,
+        file_size, file_type, upload_user_id, upload_time, del_flag
+    </sql>
+
+    <select id="selectById" resultMap="TaskAttachmentResult">
+        select <include refid="columns"/> from task_attachment
+        where attachment_id = #{attachmentId} and del_flag = '0'
+    </select>
+
+    <select id="selectBySubmissionId" resultMap="TaskAttachmentResult">
+        select <include refid="columns"/> from task_attachment
+        where submission_id = #{submissionId} and del_flag = '0'
+        order by attachment_id
+    </select>
+
+    <select id="countBySubmissionId" resultType="int">
+        select count(1) from task_attachment
+        where submission_id = #{submissionId} and del_flag = '0'
+    </select>
+
+    <insert id="insert" useGeneratedKeys="true" keyProperty="attachmentId">
+        insert into task_attachment
+        (group_id, submission_id, file_name, original_name, file_url, file_size,
+         file_type, upload_user_id, upload_time, del_flag)
+        values
+        (#{groupId}, #{submissionId}, #{fileName}, #{originalName}, #{fileUrl}, #{fileSize},
+         #{fileType}, #{uploadUserId}, #{uploadTime}, #{delFlag})
+    </insert>
+
+    <update id="deleteById">
+        update task_attachment set del_flag = '2'
+        where attachment_id = #{attachmentId} and upload_user_id = #{uploadUserId} and del_flag = '0'
+    </update>
+
+    <update id="deleteBySubmissionId">
+        update task_attachment set del_flag = '2'
+        where submission_id = #{submissionId} and del_flag = '0'
+    </update>
+</mapper>

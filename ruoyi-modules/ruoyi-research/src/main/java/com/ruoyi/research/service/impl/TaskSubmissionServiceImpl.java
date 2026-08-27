@@ -15,6 +15,7 @@ import com.ruoyi.research.mapper.TaskSubmissionMapper;
 import com.ruoyi.research.service.ResearchOrgService;
 import com.ruoyi.research.service.ResearchPermissionService;
 import com.ruoyi.research.service.TaskPermissionService;
+import com.ruoyi.research.service.TaskAttachmentService;
 import com.ruoyi.research.service.TaskSubmissionService;
 import com.ruoyi.research.util.ResearchSecurityUtils;
 import com.ruoyi.system.api.domain.FundUserOption;
@@ -42,6 +43,9 @@ public class TaskSubmissionServiceImpl implements TaskSubmissionService
 
     @Autowired
     private ResearchOrgService orgService;
+
+    @Autowired
+    private TaskAttachmentService attachmentService;
 
     @Override
     public TaskSubmission selectById(Long submissionId)
@@ -129,6 +133,7 @@ public class TaskSubmissionServiceImpl implements TaskSubmissionService
         {
             throw new ServiceException("Submission was changed concurrently; refresh and retry");
         }
+        attachmentService.deleteBySubmissionId(submissionId);
         return rows;
     }
 
