@@ -3,6 +3,7 @@ package com.ruoyi.fund.domain;
 import java.io.Serializable;
 import java.util.Date;
 import com.fasterxml.jackson.annotation.JsonFormat;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public class FundOperationLog implements Serializable
 {
@@ -13,7 +14,9 @@ public class FundOperationLog implements Serializable
     private String businessType;
     private Long businessId;
     private String operationType;
+    @JsonIgnore
     private String beforeData;
+    @JsonIgnore
     private String afterData;
     private String reason;
     private Long operatorId;

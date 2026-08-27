@@ -9,4 +9,6 @@ public interface IFundOperationLogService
             Object beforeData, Object afterData, String reason);
 
     List<FundOperationLog> selectList(FundOperationLog query);
+
+    List<FundOperationLog> selectAuthorizedList(FundOperationLog query);
 }
