@@ -95,7 +95,8 @@ public class TaskSubmissionController extends BaseController
     @PostMapping
     public AjaxResult add(@Validated @RequestBody TaskSubmission submission)
     {
-        return toAjax(submissionService.insertDraft(submission));
+        return submissionService.insertDraft(submission) > 0
+                ? AjaxResult.success(submission) : AjaxResult.error();
     }
 
     @RequiresPermissions("task:submission:edit")
