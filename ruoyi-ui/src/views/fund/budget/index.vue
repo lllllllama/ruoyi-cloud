@@ -59,7 +59,7 @@
 
 <script>
 import { groupOptions } from '@/api/research/group'
-import { listBudget, addBudget, updateBudget, getOverview } from '@/api/fund/budget'
+import { listBudget, addBudget, updateBudget, getAllocationOverview, getUseOverview } from '@/api/fund/budget'
 
 export default {
   name: 'FundBudget',
@@ -76,11 +76,11 @@ export default {
       budgetRules: { totalAmount: [{ required: true, message: '请输入总资金' }] },
       cards: [
         { key: 'totalAmount', label: '课题总资金（元）' },
-        { key: 'arrivedAmount', label: '已到位资金（元）' },
-        { key: 'usedAmount', label: '已使用资金（元）' },
-        { key: 'pendingAllocationAmount', label: '待拨资金（元）' },
-        { key: 'plannedAllocationAmount', label: '计划拨付总额（元）' },
-        { key: 'remainingUseAmount', label: '资金余额（元）' }
+        { key: 'plannedAllocation', label: '计划拨付（元）' },
+        { key: 'actualAllocation', label: '实际拨付（元）' },
+        { key: 'plannedUse', label: '计划使用（元）' },
+        { key: 'actualUse', label: '实际使用（元）' },
+        { key: 'overspend', label: '使用超计划（元）' }
       ]
     }
   },
@@ -124,8 +124,8 @@ export default {
       })
     },
     showOverview(group) {
-      getOverview(group.groupId).then(result => {
-        this.overview = result.data
+      Promise.all([getAllocationOverview(group.groupId), getUseOverview(group.groupId)]).then(([allocation, use]) => {
+        this.overview = Object.assign({}, allocation.data, use.data)
         this.overviewOpen = true
       })
     }
