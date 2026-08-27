@@ -12,11 +12,15 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 import com.ruoyi.common.core.web.controller.BaseController;
 import com.ruoyi.common.core.web.domain.AjaxResult;
+import com.ruoyi.common.core.exception.ServiceException;
+import com.ruoyi.common.security.utils.SecurityUtils;
 import com.ruoyi.common.log.annotation.Log;
 import com.ruoyi.common.log.enums.BusinessType;
 import com.ruoyi.common.security.annotation.RequiresPermissions;
 import com.ruoyi.research.domain.ResearchGroupMember;
 import com.ruoyi.research.service.ResearchGroupMemberService;
+import com.ruoyi.research.service.ResearchPermissionService;
+import com.ruoyi.research.service.ResearchRemoteQueryService;
 
 @RestController
 @RequestMapping("/group/{groupId}/member")
@@ -24,6 +28,22 @@ public class ResearchGroupMemberController extends BaseController
 {
     @Autowired
     private ResearchGroupMemberService memberService;
+
+    @Autowired
+    private ResearchPermissionService permissionService;
+
+    @Autowired
+    private ResearchRemoteQueryService remoteQueryService;
+
+    @GetMapping("/options")
+    public AjaxResult options(@PathVariable("groupId") Long groupId)
+    {
+        if (!permissionService.canViewGroup(groupId, SecurityUtils.getUserId()))
+        {
+            throw new ServiceException("No permission to view research group members");
+        }
+        return AjaxResult.success(remoteQueryService.getSelectableMembers(groupId, null));
+    }
 
     @RequiresPermissions("research:group:list")
     @GetMapping("/list")

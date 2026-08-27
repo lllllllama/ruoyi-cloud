@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
-<mapper namespace="com.ruoyi.fund.mapper.FundTopicDeptMapper">
-  <select id="selectByTopicId" resultType="FundTopicDept">select id,topic_id,dept_id,dept_type,dept_name from fund_topic_dept where topic_id=#{topicId} order by dept_type, id</select>
-  <select id="selectDeptIdsByTopicId" resultType="java.lang.Long">select dept_id from fund_topic_dept where topic_id=#{topicId}</select>
-  <select id="countTopicDept" resultType="int">select count(1) from fund_topic_dept where topic_id=#{topicId} and dept_id=#{deptId}</select>
-  <delete id="deleteByTopicId">delete from fund_topic_dept where topic_id=#{topicId}</delete>
-  <insert id="batchInsert">insert into fund_topic_dept(topic_id,dept_id,dept_type,dept_name) values <foreach collection="list" item="x" separator=",">(#{x.topicId},#{x.deptId},#{x.deptType},#{x.deptName})</foreach></insert>
-</mapper>

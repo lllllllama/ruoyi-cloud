@@ -1,6 +1,7 @@
 package com.ruoyi.research.controller;
 
 import java.util.List;
+import java.util.ArrayList;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -17,8 +18,10 @@ import com.ruoyi.common.core.web.page.TableDataInfo;
 import com.ruoyi.common.log.annotation.Log;
 import com.ruoyi.common.log.enums.BusinessType;
 import com.ruoyi.common.security.annotation.RequiresPermissions;
+import com.ruoyi.common.security.utils.SecurityUtils;
 import com.ruoyi.research.domain.ResearchGroup;
 import com.ruoyi.research.service.ResearchGroupService;
+import com.ruoyi.research.service.ResearchPermissionService;
 
 @RestController
 @RequestMapping("/group")
@@ -26,6 +29,32 @@ public class ResearchGroupController extends BaseController
 {
     @Autowired
     private ResearchGroupService groupService;
+
+    @Autowired
+    private ResearchPermissionService permissionService;
+
+    @GetMapping("/options")
+    public AjaxResult options()
+    {
+        ResearchGroup query = new ResearchGroup();
+        query.setStatus("0");
+        return AjaxResult.success(groupService.selectList(query));
+    }
+
+    @GetMapping("/accessible")
+    public AjaxResult accessible()
+    {
+        List<ResearchGroup> groups = new ArrayList<>();
+        for (Long groupId : permissionService.getAllowedGroupIds(SecurityUtils.getUserId()))
+        {
+            ResearchGroup group = groupService.selectById(groupId);
+            if (group != null && "0".equals(group.getStatus()))
+            {
+                groups.add(group);
+            }
+        }
+        return AjaxResult.success(groups);
+    }
 
     @RequiresPermissions("research:group:list")
     @GetMapping("/list")
