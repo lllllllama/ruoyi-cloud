@@ -16,6 +16,7 @@ import com.ruoyi.research.service.ResearchOrgService;
 import com.ruoyi.research.service.ResearchPermissionService;
 import com.ruoyi.research.service.TaskPermissionService;
 import com.ruoyi.research.service.TaskAttachmentService;
+import com.ruoyi.research.service.TaskCompletionService;
 import com.ruoyi.research.service.TaskSubmissionAuditService;
 import com.ruoyi.research.service.TaskSubmissionService;
 import com.ruoyi.research.util.ResearchSecurityUtils;
@@ -52,6 +53,9 @@ public class TaskSubmissionServiceImpl implements TaskSubmissionService
 
     @Autowired
     private TaskSubmissionAuditService auditService;
+
+    @Autowired
+    private TaskCompletionService taskCompletionService;
 
     @Override
     public TaskSubmission selectById(Long submissionId)
@@ -223,6 +227,7 @@ public class TaskSubmissionServiceImpl implements TaskSubmissionService
         {
             throw new ServiceException("Failed to update deliverable archive progress");
         }
+        taskCompletionService.recalculateFromTask(deliverable.getTaskId());
     }
 
     private void normalize(TaskSubmission submission)

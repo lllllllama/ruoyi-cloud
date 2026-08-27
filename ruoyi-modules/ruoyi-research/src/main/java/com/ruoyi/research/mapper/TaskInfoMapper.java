@@ -8,6 +8,8 @@ public interface TaskInfoMapper
 {
     TaskInfo selectById(Long taskId);
 
+    TaskInfo selectForUpdate(Long taskId);
+
     List<TaskInfo> selectChildren(Long parentId);
 
     List<TaskInfo> selectByFrameworkId(Long frameworkId);
@@ -23,6 +25,13 @@ public interface TaskInfoMapper
             @Param("updateBy") String updateBy);
 
     int countActiveChildren(Long taskId);
+
+    int countUnfinishedEffectiveChildren(Long taskId);
+
+    int countUnfinishedRequiredDeliverables(Long taskId);
+
+    int updateCompletionStatus(@Param("taskId") Long taskId,
+            @Param("status") String status, @Param("updateBy") String updateBy);
 
     int countSubmissions(Long taskId);
 

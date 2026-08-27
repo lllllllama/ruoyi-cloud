@@ -41,6 +41,12 @@
         and t.task_id = #{taskId}
     </select>
 
+    <select id="selectForUpdate" resultMap="TaskInfoResult">
+        <include refid="selectTaskInfo"/>
+        and t.task_id = #{taskId}
+        for update
+    </select>
+
     <select id="selectChildren" resultMap="TaskInfoResult">
         <include refid="selectTaskInfo"/>
         and t.parent_id = #{parentId}
@@ -119,6 +125,24 @@
         select count(1) from task_info
         where parent_id = #{taskId} and del_flag = '0'
     </select>
+
+    <select id="countUnfinishedEffectiveChildren" resultType="int">
+        select count(1) from task_info
+        where parent_id = #{taskId} and status not in ('2', '3') and del_flag = '0'
+    </select>
+
+    <select id="countUnfinishedRequiredDeliverables" resultType="int">
+        select count(1) from task_deliverable
+        where task_id = #{taskId} and is_required = '1' and status != '2' and del_flag = '0'
+    </select>
+
+    <update id="updateCompletionStatus">
+        update task_info
+        set status = #{status},
+            finish_time = case when #{status} = '2' then sysdate() else null end,
+            update_by = #{updateBy}, update_time = sysdate()
+        where task_id = #{taskId} and status != '3' and del_flag = '0'
+    </update>
 
     <select id="countSubmissions" resultType="int">
         select count(1) from task_submission

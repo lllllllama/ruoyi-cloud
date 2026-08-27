@@ -29,6 +29,7 @@ import com.ruoyi.research.service.ResearchOrgService;
 import com.ruoyi.research.service.ResearchPermissionService;
 import com.ruoyi.research.service.TaskPermissionService;
 import com.ruoyi.research.service.TaskAttachmentService;
+import com.ruoyi.research.service.TaskCompletionService;
 import com.ruoyi.research.service.TaskSubmissionAuditService;
 import com.ruoyi.system.api.domain.FundUserOption;
 
@@ -44,6 +45,7 @@ public class TaskSubmissionServiceImplTest
     @Mock private ResearchOrgService orgService;
     @Mock private TaskAttachmentService attachmentService;
     @Mock private TaskSubmissionAuditService auditService;
+    @Mock private TaskCompletionService taskCompletionService;
 
     @Before
     public void setUp()
