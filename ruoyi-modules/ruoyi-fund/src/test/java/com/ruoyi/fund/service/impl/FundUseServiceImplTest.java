@@ -24,6 +24,7 @@ import com.ruoyi.fund.domain.FundUseRecord;
 import com.ruoyi.fund.domain.dto.FundFinishRequest;
 import com.ruoyi.fund.domain.vo.FundFinishCheckVo;
 import com.ruoyi.fund.mapper.FundProjectBudgetMapper;
+import com.ruoyi.fund.mapper.FundAllocationRecordMapper;
 import com.ruoyi.fund.mapper.FundUsePlanMapper;
 import com.ruoyi.fund.mapper.FundUseRecordMapper;
 import com.ruoyi.fund.service.FundPermissionService;
@@ -40,6 +41,7 @@ public class FundUseServiceImplTest
     @Mock private FundUsePlanMapper planMapper;
     @Mock private FundUseRecordMapper recordMapper;
     @Mock private FundProjectBudgetMapper budgetMapper;
+    @Mock private FundAllocationRecordMapper allocationRecordMapper;
     @Mock private IFundResearchService researchService;
     @Mock private IFundOrgService org;
     @Mock private IFundOperationLogService audit;
@@ -87,6 +89,105 @@ public class FundUseServiceImplTest
     }
 
     @Test
+    public void insertUseWithinActualAllocationSucceeds()
+    {
+        when(planMapper.selectForUpdate(10L)).thenReturn(runningPlan());
+        when(allocationRecordMapper.sumByTopicId(1L)).thenReturn(money("100"));
+        when(recordMapper.sumByTopicId(1L)).thenReturn(money("60"));
+        when(recordMapper.insert(any(FundUseRecord.class))).thenAnswer(invocation -> {
+            ((FundUseRecord) invocation.getArgument(0)).setUseRecordId(20L);
+            return 1;
+        });
+
+        assertEquals(1, service.insertRecord(useRecord(null, "40")));
+    }
+
+    @Test
+    public void insertUseExceedingActualAllocationFailsBeforeInsert()
+    {
+        when(planMapper.selectForUpdate(10L)).thenReturn(runningPlan());
+        when(allocationRecordMapper.sumByTopicId(1L)).thenReturn(money("100"));
+        when(recordMapper.sumByTopicId(1L)).thenReturn(money("90"));
+
+        assertDenied(() -> service.insertRecord(useRecord(null, "20")));
+
+        verify(recordMapper, never()).insert(any(FundUseRecord.class));
+        verify(attachmentService, never()).consume(anyLong(), anyString(), anyLong(), anyString());
+        verify(audit, never()).record(anyLong(), anyString(), anyLong(), anyString(), any(), any(), any());
+    }
+
+    @Test
+    public void updateUseUsesDeltaCalculation()
+    {
+        when(planMapper.selectForUpdate(10L)).thenReturn(runningPlan());
+        when(recordMapper.selectById(20L)).thenReturn(useRecord(20L, "50"));
+        when(allocationRecordMapper.sumByTopicId(1L)).thenReturn(money("90"));
+        when(recordMapper.sumByTopicId(1L)).thenReturn(money("95"));
+        when(recordMapper.update(any(FundUseRecord.class))).thenReturn(1);
+
+        assertEquals(1, service.updateRecord(useRecord(20L, "40")));
+    }
+
+    @Test
+    public void updateUseCannotExceedActualAllocation()
+    {
+        when(planMapper.selectForUpdate(10L)).thenReturn(runningPlan());
+        when(recordMapper.selectById(20L)).thenReturn(useRecord(20L, "10"));
+        when(allocationRecordMapper.sumByTopicId(1L)).thenReturn(money("90"));
+        when(recordMapper.sumByTopicId(1L)).thenReturn(money("80"));
+
+        assertDenied(() -> service.updateRecord(useRecord(20L, "30")));
+        verify(recordMapper, never()).update(any(FundUseRecord.class));
+    }
+
+    @Test
+    public void deleteUseRecordStillMaintainsValidTotals()
+    {
+        when(planMapper.selectForUpdate(10L)).thenReturn(runningPlan());
+        when(recordMapper.selectById(20L)).thenReturn(useRecord(20L, "20"));
+        when(recordMapper.sumByTopicId(1L)).thenReturn(money("20"));
+        when(allocationRecordMapper.sumByTopicId(1L)).thenReturn(money("100"));
+        when(recordMapper.deleteById(20L)).thenReturn(1);
+
+        assertEquals(1, service.deleteRecord(20L));
+        verify(attachmentService).deleteByBusiness("USE_RECORD", 20L);
+    }
+
+    @Test
+    public void pendingForceFinishRejectsNewUseRecord()
+    {
+        when(planMapper.selectForUpdate(10L)).thenReturn(pendingForceFinishPlan());
+        assertDenied(() -> service.insertRecord(useRecord(null, "1")));
+        verify(recordMapper, never()).insert(any(FundUseRecord.class));
+    }
+
+    @Test
+    public void pendingForceFinishRejectsUseRecordUpdate()
+    {
+        when(recordMapper.selectById(20L)).thenReturn(useRecord(20L, "1"));
+        when(planMapper.selectForUpdate(10L)).thenReturn(pendingForceFinishPlan());
+        assertDenied(() -> service.updateRecord(useRecord(20L, "2")));
+        verify(recordMapper, never()).update(any(FundUseRecord.class));
+    }
+
+    @Test
+    public void pendingForceFinishRejectsUseRecordDelete()
+    {
+        when(recordMapper.selectById(20L)).thenReturn(useRecord(20L, "1"));
+        when(planMapper.selectForUpdate(10L)).thenReturn(pendingForceFinishPlan());
+        assertDenied(() -> service.deleteRecord(20L));
+        verify(recordMapper, never()).deleteById(anyLong());
+    }
+
+    @Test
+    public void pendingForceFinishRejectsRepeatedFinishRequest()
+    {
+        when(planMapper.selectForUpdate(10L)).thenReturn(pendingForceFinishPlan());
+        assertDenied(() -> service.finish(10L, confirmed("repeat")));
+        verify(planMapper, never()).requestForceFinish(anyLong(), any(), any(), anyString(), anyLong(), anyString());
+    }
+
+    @Test
     public void finishCheckCoversUnderExactAndOver()
     {
         FundUsePlan plan = runningPlan();
@@ -129,7 +230,8 @@ public class FundUseServiceImplTest
             return 1;
         });
         when(recordMapper.sumByPlanId(10L)).thenReturn(money("100"));
-        when(recordMapper.sumByTopicId(1L)).thenReturn(money("100"));
+        when(recordMapper.sumByTopicId(1L)).thenReturn(money("0"), money("100"));
+        when(allocationRecordMapper.sumByTopicId(1L)).thenReturn(money("100"));
 
         FundUseRecord record = new FundUseRecord();
         record.setUsePlanId(10L);
@@ -160,6 +262,7 @@ public class FundUseServiceImplTest
         when(planMapper.selectForUpdate(11L)).thenReturn(exact);
         when(planMapper.selectForUpdate(12L)).thenReturn(over);
         when(recordMapper.sumByTopicId(1L)).thenReturn(money("120"));
+        when(allocationRecordMapper.sumByTopicId(1L)).thenReturn(money("200"));
         when(recordMapper.sumByPlanId(10L)).thenReturn(money("80"));
         when(recordMapper.sumByPlanId(11L)).thenReturn(money("100"));
         when(recordMapper.sumByPlanId(12L)).thenReturn(money("120"));
@@ -188,6 +291,7 @@ public class FundUseServiceImplTest
         FundUsePlan plan = runningPlan();
         when(planMapper.selectForUpdate(10L)).thenReturn(plan);
         when(recordMapper.sumByTopicId(1L)).thenReturn(money("120"));
+        when(allocationRecordMapper.sumByTopicId(1L)).thenReturn(money("200"));
         when(recordMapper.sumByPlanId(10L)).thenReturn(money("120"));
         when(permissionService.canConfirmForceFinish(1L, 1L)).thenReturn(false);
 
@@ -222,6 +326,7 @@ public class FundUseServiceImplTest
             return plan;
         });
         when(recordMapper.sumByTopicId(1L)).thenReturn(money("100"));
+        when(allocationRecordMapper.sumByTopicId(1L)).thenReturn(money("100"));
         when(recordMapper.sumByPlanId(10L)).thenReturn(money("100"));
         AtomicReference<Throwable> closeFailure = new AtomicReference<>();
         AtomicReference<Throwable> recordFailure = new AtomicReference<>();
@@ -327,6 +432,26 @@ public class FundUseServiceImplTest
         plan.setPlanAmount(money("100"));
         plan.setStatus(FundConstants.STATUS_RUNNING);
         return plan;
+    }
+
+    private FundUsePlan pendingForceFinishPlan()
+    {
+        FundUsePlan plan = runningPlan();
+        plan.setForceFinish("1");
+        plan.setFinishType(FundConstants.FINISH_OVER);
+        plan.setFinishUserId(1L);
+        plan.setFinishReason("waiting for leader confirmation");
+        return plan;
+    }
+
+    private FundUseRecord useRecord(Long recordId, String amount)
+    {
+        FundUseRecord record = new FundUseRecord();
+        record.setUseRecordId(recordId);
+        record.setUsePlanId(10L);
+        record.setAmount(money(amount));
+        record.setSubmitUserId(1L);
+        return record;
     }
 
     private void login(Long userId)

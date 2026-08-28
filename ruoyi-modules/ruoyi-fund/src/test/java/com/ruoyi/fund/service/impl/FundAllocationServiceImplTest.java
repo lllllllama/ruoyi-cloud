@@ -26,6 +26,7 @@ import com.ruoyi.fund.domain.vo.FundFinishCheckVo;
 import com.ruoyi.fund.mapper.FundAllocationPlanMapper;
 import com.ruoyi.fund.mapper.FundAllocationRecordMapper;
 import com.ruoyi.fund.mapper.FundProjectBudgetMapper;
+import com.ruoyi.fund.mapper.FundUseRecordMapper;
 import com.ruoyi.fund.service.FundPermissionService;
 import com.ruoyi.fund.service.IFundAttachmentService;
 import com.ruoyi.fund.service.IFundOperationLogService;
@@ -41,6 +42,7 @@ public class FundAllocationServiceImplTest
     @Mock private FundAllocationPlanMapper planMapper;
     @Mock private FundAllocationRecordMapper recordMapper;
     @Mock private FundProjectBudgetMapper budgetMapper;
+    @Mock private FundUseRecordMapper useRecordMapper;
     @Mock private IFundOrgService org;
     @Mock private IFundResearchService researchService;
     @Mock private IFundOperationLogService audit;
@@ -87,6 +89,85 @@ public class FundAllocationServiceImplTest
     }
 
     @Test
+    public void insertAllocationWithinBudgetSucceeds()
+    {
+        FundAllocationPlan plan = runningPlan();
+        when(planMapper.selectForUpdate(10L)).thenReturn(plan);
+        when(recordMapper.sumByTopicId(1L)).thenReturn(money("60"));
+        when(recordMapper.insert(any(FundAllocationRecord.class))).thenAnswer(invocation -> {
+            ((FundAllocationRecord) invocation.getArgument(0)).setRecordId(20L);
+            return 1;
+        });
+
+        FundAllocationRecord record = allocationRecord(null, "40");
+        assertEquals(1, service.insertRecord(record));
+
+        verify(recordMapper).insert(record);
+    }
+
+    @Test
+    public void insertAllocationExceedingBudgetFailsBeforeInsert()
+    {
+        when(planMapper.selectForUpdate(10L)).thenReturn(runningPlan());
+        when(recordMapper.sumByTopicId(1L)).thenReturn(money("90"));
+
+        assertDenied(() -> service.insertRecord(allocationRecord(null, "20")));
+
+        verify(recordMapper, never()).insert(any(FundAllocationRecord.class));
+        verify(attachmentService, never()).consume(anyLong(), anyString(), anyLong(), anyString());
+        verify(audit, never()).record(anyLong(), anyString(), anyLong(), anyString(), any(), any(), any());
+    }
+
+    @Test
+    public void updateAllocationRecordRecalculatesProjectActual()
+    {
+        when(planMapper.selectForUpdate(10L)).thenReturn(runningPlan());
+        FundAllocationRecord old = allocationRecord(20L, "50");
+        when(recordMapper.selectById(20L)).thenReturn(old);
+        when(recordMapper.sumByTopicId(1L)).thenReturn(money("95"));
+        when(useRecordMapper.sumByTopicId(1L)).thenReturn(money("80"));
+        when(recordMapper.update(any(FundAllocationRecord.class))).thenReturn(1);
+
+        assertEquals(1, service.updateRecord(allocationRecord(20L, "40")));
+    }
+
+    @Test
+    public void updateAllocationRecordCannotExceedBudget()
+    {
+        when(planMapper.selectForUpdate(10L)).thenReturn(runningPlan());
+        when(recordMapper.selectById(20L)).thenReturn(allocationRecord(20L, "10"));
+        when(recordMapper.sumByTopicId(1L)).thenReturn(money("90"));
+
+        assertDenied(() -> service.updateRecord(allocationRecord(20L, "30")));
+        verify(recordMapper, never()).update(any(FundAllocationRecord.class));
+    }
+
+    @Test
+    public void updateAllocationRecordCannotReduceAllocationBelowActualUse()
+    {
+        when(planMapper.selectForUpdate(10L)).thenReturn(runningPlan());
+        when(recordMapper.selectById(20L)).thenReturn(allocationRecord(20L, "50"));
+        when(recordMapper.sumByTopicId(1L)).thenReturn(money("100"));
+        when(useRecordMapper.sumByTopicId(1L)).thenReturn(money("80"));
+
+        assertDenied(() -> service.updateRecord(allocationRecord(20L, "20")));
+        verify(recordMapper, never()).update(any(FundAllocationRecord.class));
+    }
+
+    @Test
+    public void deleteAllocationRecordCannotReduceAllocationBelowActualUse()
+    {
+        when(planMapper.selectForUpdate(10L)).thenReturn(runningPlan());
+        when(recordMapper.selectById(20L)).thenReturn(allocationRecord(20L, "30"));
+        when(recordMapper.sumByTopicId(1L)).thenReturn(money("100"));
+        when(useRecordMapper.sumByTopicId(1L)).thenReturn(money("80"));
+
+        assertDenied(() -> service.deleteRecord(20L));
+        verify(recordMapper, never()).deleteById(anyLong());
+        verify(attachmentService, never()).deleteByBusiness(anyString(), anyLong());
+    }
+
+    @Test
     public void finishCheckCoversUnderExactAndOver()
     {
         FundAllocationPlan plan = runningPlan();
@@ -128,7 +209,7 @@ public class FundAllocationServiceImplTest
             return 1;
         });
         when(recordMapper.sumByPlanId(10L)).thenReturn(money("100"));
-        when(recordMapper.sumByTopicId(1L)).thenReturn(money("100"));
+        when(recordMapper.sumByTopicId(1L)).thenReturn(money("0"), money("100"));
 
         FundAllocationRecord record = new FundAllocationRecord();
         record.setPlanId(10L);
@@ -318,6 +399,16 @@ public class FundAllocationServiceImplTest
         plan.setPlanAmount(money("100"));
         plan.setStatus(FundConstants.STATUS_RUNNING);
         return plan;
+    }
+
+    private FundAllocationRecord allocationRecord(Long recordId, String amount)
+    {
+        FundAllocationRecord record = new FundAllocationRecord();
+        record.setRecordId(recordId);
+        record.setPlanId(10L);
+        record.setAmount(money(amount));
+        record.setSubmitUserId(1L);
+        return record;
     }
 
     private void login(Long userId)
