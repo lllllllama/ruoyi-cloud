@@ -155,6 +155,19 @@ Assert-QaSuccess -Response (Invoke-Fund Post '/budget' $adminToken @{
     topicId=$groupA; totalAmount=1000.00; planEndTime='2026-12-31 23:59:59'; fundDesc='failure recovery budget'
 }) -Label 'recovery budget' | Out-Null
 
+# Establish real received funds before creating use records. T71 requires
+# project actual use to remain within project actual allocation at every write.
+$allocationName = "FAIL-ALLOCATION-$stamp"
+Assert-QaSuccess -Response (Invoke-Fund Post '/allocation/plan' $adminToken @{
+    topicId=$groupA; allocationName=$allocationName; allocationDeptId=103; receiveDeptId=104
+    planAmount=300.00; planTime='2026-08-28 09:00:00'; fundDesc='failure recovery allocation'
+}) -Label 'recovery allocation plan' | Out-Null
+$allocationPlanId = [long](Get-DbScalar 'ry-fund' "select plan_id from fund_allocation_plan where allocation_name='$allocationName'")
+Assert-QaSuccess -Response (Invoke-Fund Post '/allocation/record' $adminToken @{
+    planId=$allocationPlanId; allocationName='failure recovery received funds'; amount=300.00
+    allocationTime='2026-08-28 09:10:00'; fundDesc='failure recovery allocation record'
+}) -Label 'recovery allocation record' | Out-Null
+
 $openName = "FAIL-OPEN-$stamp"
 $completedName = "FAIL-COMPLETED-$stamp"
 foreach ($plan in @(
