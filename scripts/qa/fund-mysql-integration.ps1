@@ -7,6 +7,7 @@ param(
 $ErrorActionPreference = 'Stop'
 . (Join-Path $PSScriptRoot 'qa-http-common.ps1')
 Add-Type -AssemblyName System.Net.Http
+[Net.ServicePointManager]::DefaultConnectionLimit = 100
 
 $groupA = 991000001
 $groupB = 991000002
@@ -299,55 +300,71 @@ Write-Output '[7/8] Record-versus-finish races'
 $raceAllocationName = "race-allocation-$stamp"
 Assert-QaSuccess -Response (Add-AllocationPlan -Amount 100.00 -Name $raceAllocationName -GroupId $groupB -AllocationDeptId 105 -ReceiveDeptId 105 -ResponsibleUserId 9105) -Label 'create allocation race plan' | Out-Null
 $raceAllocationId = (Get-AllocationPlan $raceAllocationName $groupB).planId
-$raceAllocation = Invoke-ConcurrentQaRequests @(
-    @{ Method='PUT'; Path="/ruoyi-fund/allocation/plan/$raceAllocationId/finish"; Token=$leaderBToken; Body=@{ confirmDifference=$true; reason='QA concurrent close' } },
-    @{ Method='POST'; Path='/ruoyi-fund/allocation/record'; Token=$leaderBToken; Body=@{ planId=$raceAllocationId; allocationName='QA concurrent record'; amount=20.00; allocationTime='2026-08-28 12:30:00' } }
+$raceAllocationRequests = @(
+    @{ Method='PUT'; Path="/ruoyi-fund/allocation/plan/$raceAllocationId/finish"; Token=$leaderBToken; Body=@{ confirmDifference=$true; reason='QA 20-thread concurrent close' } }
 )
+1..19 | ForEach-Object {
+    $raceAllocationRequests += @{
+        Method='POST'; Path='/ruoyi-fund/allocation/record'; Token=$leaderBToken
+        Body=@{ planId=$raceAllocationId; allocationName="QA concurrent record $_"; amount=1.00; allocationTime='2026-08-28 12:30:00' }
+    }
+}
+$raceAllocation = Invoke-ConcurrentQaRequests $raceAllocationRequests
 $raceAllocationFinishSuccess = Test-QaSuccessResponse $raceAllocation[0]
+$raceAllocationRecordSuccesses = @($raceAllocation | Select-Object -Skip 1 | Where-Object { Test-QaSuccessResponse $_ }).Count
 $raceAllocationAfter = (Assert-QaSuccess -Response (Invoke-QaRawRequest -BaseUrl $BaseUrl -Method Get -Path "/ruoyi-fund/allocation/plan/$raceAllocationId" -Token $adminToken) -Label 'allocation after race').data
 Assert-QaSuccess -Response (Invoke-QaRawRequest -BaseUrl $BaseUrl -Method Get -Path "/ruoyi-fund/allocation/plan/$raceAllocationId/records" -Token $adminToken) -Label 'allocation records after race' | Out-Null
 $raceAllocationSum = Get-DbScalar 'ry-fund' "SELECT COALESCE(SUM(amount),0) FROM fund_allocation_record WHERE plan_id=$raceAllocationId"
 $postFinishAllocation = Invoke-QaRawRequest -BaseUrl $BaseUrl -Method Post -Path '/ruoyi-fund/allocation/record' -Token $leaderBToken -Body @{ planId=$raceAllocationId; allocationName='must fail after close'; amount=1.00; allocationTime='2026-08-28 12:31:00' }
-Add-QaCase 'CON-ALLOC-RECORD-VS-FINISH' ($raceAllocationFinishSuccess -and $raceAllocationAfter.status -eq '1' -and [decimal]$raceAllocationAfter.actualAmount -eq [decimal]$raceAllocationSum -and -not (Test-QaSuccessResponse $postFinishAllocation)) "status=$($raceAllocationAfter.status),actual=$($raceAllocationAfter.actualAmount),sum=$raceAllocationSum"
+Add-QaCase 'CON-ALLOC-20-THREAD-RECORD-VS-FINISH' ($raceAllocationFinishSuccess -and $raceAllocationAfter.status -eq '1' -and [decimal]$raceAllocationAfter.actualAmount -eq [decimal]$raceAllocationSum -and [decimal]$raceAllocationSum -eq [decimal]$raceAllocationRecordSuccesses -and -not (Test-QaSuccessResponse $postFinishAllocation)) "status=$($raceAllocationAfter.status),recordSuccess=$raceAllocationRecordSuccesses,actual=$($raceAllocationAfter.actualAmount),sum=$raceAllocationSum"
 
 $raceUseName = "race-use-$stamp"
 Assert-QaSuccess -Response (Add-UsePlan -Amount 100.00 -Name $raceUseName -GroupId $groupB -ResponsibleUserId 9106 -Token $leaderBToken) -Label 'create use race plan' | Out-Null
 $raceUseId = (Get-UsePlan $raceUseName $groupB $leaderBToken).usePlanId
-$raceUse = Invoke-ConcurrentQaRequests @(
-    @{ Method='PUT'; Path="/ruoyi-fund/use/plan/$raceUseId/finish"; Token=$coreBToken; Body=@{ confirmDifference=$true; reason='QA concurrent close' } },
-    @{ Method='POST'; Path='/ruoyi-fund/use/record'; Token=$coreBToken; Body=@{ usePlanId=$raceUseId; useName='QA concurrent record'; amount=20.00; useTime='2026-08-28 12:30:00' } }
+$raceUseRequests = @(
+    @{ Method='PUT'; Path="/ruoyi-fund/use/plan/$raceUseId/finish"; Token=$coreBToken; Body=@{ confirmDifference=$true; reason='QA 20-thread concurrent close' } }
 )
+1..19 | ForEach-Object {
+    $raceUseRequests += @{
+        Method='POST'; Path='/ruoyi-fund/use/record'; Token=$coreBToken
+        Body=@{ usePlanId=$raceUseId; useName="QA concurrent record $_"; amount=1.00; useTime='2026-08-28 12:30:00' }
+    }
+}
+$raceUse = Invoke-ConcurrentQaRequests $raceUseRequests
 $raceUseFinishSuccess = Test-QaSuccessResponse $raceUse[0]
+$raceUseRecordSuccesses = @($raceUse | Select-Object -Skip 1 | Where-Object { Test-QaSuccessResponse $_ }).Count
 $raceUseAfter = (Assert-QaSuccess -Response (Invoke-QaRawRequest -BaseUrl $BaseUrl -Method Get -Path "/ruoyi-fund/use/plan/$raceUseId" -Token $leaderBToken) -Label 'use after race').data
 Assert-QaSuccess -Response (Invoke-QaRawRequest -BaseUrl $BaseUrl -Method Get -Path "/ruoyi-fund/use/plan/$raceUseId/records" -Token $leaderBToken) -Label 'use records after race' | Out-Null
 $raceUseSum = Get-DbScalar 'ry-fund' "SELECT COALESCE(SUM(amount),0) FROM fund_use_record WHERE use_plan_id=$raceUseId"
 $postFinishUse = Invoke-QaRawRequest -BaseUrl $BaseUrl -Method Post -Path '/ruoyi-fund/use/record' -Token $coreBToken -Body @{ usePlanId=$raceUseId; useName='must fail after close'; amount=1.00; useTime='2026-08-28 12:31:00' }
-Add-QaCase 'CON-USE-RECORD-VS-FINISH' ($raceUseFinishSuccess -and $raceUseAfter.status -eq '1' -and [decimal]$raceUseAfter.actualAmount -eq [decimal]$raceUseSum -and -not (Test-QaSuccessResponse $postFinishUse)) "status=$($raceUseAfter.status),actual=$($raceUseAfter.actualAmount),sum=$raceUseSum"
+Add-QaCase 'CON-USE-20-THREAD-RECORD-VS-FINISH' ($raceUseFinishSuccess -and $raceUseAfter.status -eq '1' -and [decimal]$raceUseAfter.actualAmount -eq [decimal]$raceUseSum -and [decimal]$raceUseSum -eq [decimal]$raceUseRecordSuccesses -and -not (Test-QaSuccessResponse $postFinishUse)) "status=$($raceUseAfter.status),recordSuccess=$raceUseRecordSuccesses,actual=$($raceUseAfter.actualAmount),sum=$raceUseSum"
 
 Write-Output '[8/8] Double finish and single audit log'
 $doubleName = "double-finish-allocation-$stamp"
 Assert-QaSuccess -Response (Add-AllocationPlan -Amount 100.00 -Name $doubleName -GroupId $groupB -AllocationDeptId 105 -ReceiveDeptId 105 -ResponsibleUserId 9105) -Label 'create double finish allocation' | Out-Null
 $doubleId = (Get-AllocationPlan $doubleName $groupB).planId
 Assert-QaSuccess -Response (Invoke-QaRawRequest -BaseUrl $BaseUrl -Method Post -Path '/ruoyi-fund/allocation/record' -Token $leaderBToken -Body @{ planId=$doubleId; allocationName='exact record'; amount=100.00; allocationTime='2026-08-28 13:00:00' }) -Label 'create exact allocation record' | Out-Null
-$doubleResponses = Invoke-ConcurrentQaRequests @(
-    @{ Method='PUT'; Path="/ruoyi-fund/allocation/plan/$doubleId/finish"; Token=$leaderBToken; Body=@{ confirmDifference=$false; reason='first close' } },
-    @{ Method='PUT'; Path="/ruoyi-fund/allocation/plan/$doubleId/finish"; Token=$leaderBToken; Body=@{ confirmDifference=$false; reason='second close' } }
-)
+$doubleRequests = @()
+1..20 | ForEach-Object {
+    $doubleRequests += @{ Method='PUT'; Path="/ruoyi-fund/allocation/plan/$doubleId/finish"; Token=$leaderBToken; Body=@{ confirmDifference=$false; reason="concurrent close $_" } }
+}
+$doubleResponses = Invoke-ConcurrentQaRequests $doubleRequests
 $doubleSuccesses = @($doubleResponses | Where-Object { Test-QaSuccessResponse $_ }).Count
 $doubleLogs = Get-DbScalar 'ry-fund' "SELECT COUNT(*) FROM fund_operation_log WHERE business_type='ALLOCATION_PLAN' AND business_id=$doubleId AND operation_type='CLOSE_ALLOCATION'"
-Add-QaCase 'CON-ALLOC-DOUBLE-FINISH' ($doubleSuccesses -eq 1 -and [int]$doubleLogs -eq 1) "success=$doubleSuccesses,closeLogs=$doubleLogs"
+Add-QaCase 'CON-ALLOC-20-THREAD-DOUBLE-FINISH' ($doubleSuccesses -eq 1 -and [int]$doubleLogs -eq 1) "success=$doubleSuccesses,closeLogs=$doubleLogs"
 
 $doubleUseName = "double-finish-use-$stamp"
 Assert-QaSuccess -Response (Add-UsePlan -Amount 100.00 -Name $doubleUseName -GroupId $groupB -ResponsibleUserId 9106 -Token $leaderBToken) -Label 'create double finish use' | Out-Null
 $doubleUseId = (Get-UsePlan $doubleUseName $groupB $leaderBToken).usePlanId
 Assert-QaSuccess -Response (Invoke-QaRawRequest -BaseUrl $BaseUrl -Method Post -Path '/ruoyi-fund/use/record' -Token $coreBToken -Body @{ usePlanId=$doubleUseId; useName='exact record'; amount=100.00; useTime='2026-08-28 13:00:00' }) -Label 'create exact use record' | Out-Null
-$doubleUseResponses = Invoke-ConcurrentQaRequests @(
-    @{ Method='PUT'; Path="/ruoyi-fund/use/plan/$doubleUseId/finish"; Token=$coreBToken; Body=@{ confirmDifference=$false; reason='first close' } },
-    @{ Method='PUT'; Path="/ruoyi-fund/use/plan/$doubleUseId/finish"; Token=$coreBToken; Body=@{ confirmDifference=$false; reason='second close' } }
-)
+$doubleUseRequests = @()
+1..20 | ForEach-Object {
+    $doubleUseRequests += @{ Method='PUT'; Path="/ruoyi-fund/use/plan/$doubleUseId/finish"; Token=$coreBToken; Body=@{ confirmDifference=$false; reason="concurrent close $_" } }
+}
+$doubleUseResponses = Invoke-ConcurrentQaRequests $doubleUseRequests
 $doubleUseSuccesses = @($doubleUseResponses | Where-Object { Test-QaSuccessResponse $_ }).Count
 $doubleUseLogs = Get-DbScalar 'ry-fund' "SELECT COUNT(*) FROM fund_operation_log WHERE business_type='USE_PLAN' AND business_id=$doubleUseId AND operation_type='CLOSE_USE'"
-Add-QaCase 'CON-USE-DOUBLE-FINISH' ($doubleUseSuccesses -eq 1 -and [int]$doubleUseLogs -eq 1) "success=$doubleUseSuccesses,closeLogs=$doubleUseLogs"
+Add-QaCase 'CON-USE-20-THREAD-DOUBLE-FINISH' ($doubleUseSuccesses -eq 1 -and [int]$doubleUseLogs -eq 1) "success=$doubleUseSuccesses,closeLogs=$doubleUseLogs"
 
 $script:Results | Format-Table -AutoSize -Wrap
 $failed = @($script:Results | Where-Object { $_.Status -eq 'FAIL' })
