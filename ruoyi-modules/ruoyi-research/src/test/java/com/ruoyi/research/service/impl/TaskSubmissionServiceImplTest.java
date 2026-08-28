@@ -10,6 +10,9 @@ import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.when;
 import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.never;
+import java.util.Arrays;
+import java.util.List;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -94,6 +97,76 @@ public class TaskSubmissionServiceImplTest
         assertEquals("0", submission.getStatus());
         assertEquals(Integer.valueOf(0), submission.getVersion());
         assertNull(submission.getSubmitTime());
+    }
+
+    @Test
+    public void mineListsOnlyCurrentUsersSubmissionHistory()
+    {
+        TaskSubmission draft = storedSubmission("0");
+        TaskSubmission pending = storedSubmission("1");
+        pending.setSubmissionId(41L);
+        when(submissionMapper.selectMine(30L, 10L)).thenReturn(Arrays.asList(draft, pending));
+
+        List<TaskSubmission> submissions = service.selectMine(30L);
+
+        assertEquals(2, submissions.size());
+        verify(submissionMapper).selectMine(30L, 10L);
+    }
+
+    @Test
+    public void ownerCanLoadDraft()
+    {
+        TaskSubmission draft = storedSubmission("0");
+        when(submissionMapper.selectById(40L)).thenReturn(draft);
+        assertEquals(draft, service.selectById(40L));
+        verify(taskPermissionService).assertCanViewSubmission(draft, 10L);
+    }
+
+    @Test
+    public void draftCanEdit()
+    {
+        TaskSubmission draft = storedSubmission("0");
+        when(submissionMapper.selectById(40L)).thenReturn(draft);
+        when(submissionMapper.updateDraft(any(TaskSubmission.class))).thenReturn(1);
+        TaskSubmission update = input();
+        update.setSubmissionId(40L);
+
+        assertEquals(1, service.updateDraft(update));
+        verify(submissionMapper).updateDraft(update);
+    }
+
+    @Test
+    public void draftCanDelete()
+    {
+        TaskSubmission draft = storedSubmission("0");
+        when(submissionMapper.selectById(40L)).thenReturn(draft);
+        when(submissionMapper.deleteDraft(40L, 0, "submitter")).thenReturn(1);
+
+        assertEquals(1, service.deleteDraft(40L));
+        verify(attachmentService).deleteBySubmissionId(40L);
+    }
+
+    @Test
+    public void nonOwnerCannotEditDraft()
+    {
+        TaskSubmission draft = storedSubmission("0");
+        draft.setSubmitUserId(11L);
+        when(submissionMapper.selectById(40L)).thenReturn(draft);
+        doThrow(new ServiceException("Only the submitter may modify this submission"))
+                .when(taskPermissionService).assertSubmissionOwner(draft, 10L);
+        TaskSubmission update = input();
+        update.setSubmissionId(40L);
+
+        try
+        {
+            service.updateDraft(update);
+            fail("A non-owner must not edit another user's draft");
+        }
+        catch (ServiceException expected)
+        {
+            assertTrue(expected.getMessage().contains("submitter"));
+        }
+        verify(submissionMapper, never()).updateDraft(any(TaskSubmission.class));
     }
 
     @Test

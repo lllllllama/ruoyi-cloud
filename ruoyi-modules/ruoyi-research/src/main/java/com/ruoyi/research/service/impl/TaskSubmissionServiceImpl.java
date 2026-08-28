@@ -76,6 +76,21 @@ public class TaskSubmissionServiceImpl implements TaskSubmissionService
     }
 
     @Override
+    public List<TaskSubmission> selectMine(Long deliverableId)
+    {
+        if (deliverableId == null)
+        {
+            throw new ServiceException("Deliverable ID is required");
+        }
+        List<TaskSubmission> submissions = submissionMapper.selectMine(deliverableId, SecurityUtils.getUserId());
+        for (TaskSubmission submission : submissions)
+        {
+            enrichUserNames(submission);
+        }
+        return submissions;
+    }
+
+    @Override
     @Transactional
     public int insertDraft(TaskSubmission submission)
     {

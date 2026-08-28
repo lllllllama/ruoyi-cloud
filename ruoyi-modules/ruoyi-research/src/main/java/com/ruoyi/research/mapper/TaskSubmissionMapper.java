@@ -13,6 +13,9 @@ public interface TaskSubmissionMapper
     List<TaskSubmission> selectList(@Param("query") TaskSubmission query,
             @Param("userId") Long userId, @Param("admin") boolean admin);
 
+    List<TaskSubmission> selectMine(@Param("deliverableId") Long deliverableId,
+            @Param("userId") Long userId);
+
     int insert(TaskSubmission submission);
 
     int updateDraft(TaskSubmission submission);

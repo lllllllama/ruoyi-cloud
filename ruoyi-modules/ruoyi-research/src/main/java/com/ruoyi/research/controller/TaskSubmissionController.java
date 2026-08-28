@@ -10,6 +10,7 @@ import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.http.ResponseEntity;
 import com.ruoyi.common.core.web.controller.BaseController;
@@ -47,6 +48,13 @@ public class TaskSubmissionController extends BaseController
         startPage();
         List<TaskSubmission> list = submissionService.selectList(query);
         return getDataTable(list);
+    }
+
+    @RequiresPermissions("task:submission:add")
+    @GetMapping("/mine")
+    public AjaxResult mine(@RequestParam Long deliverableId)
+    {
+        return AjaxResult.success(submissionService.selectMine(deliverableId));
     }
 
     @RequiresPermissions(value = { "task:submission:add", "task:submission:audit",

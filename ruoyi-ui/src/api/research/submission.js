@@ -10,6 +10,10 @@ export function getSubmission(id) {
   return request({ url: base + '/' + id, method: 'get' })
 }
 
+export function listMySubmissions(deliverableId) {
+  return request({ url: base + '/mine', method: 'get', params: { deliverableId } })
+}
+
 export function addSubmission(data) {
   return request({ url: base, method: 'post', data })
 }

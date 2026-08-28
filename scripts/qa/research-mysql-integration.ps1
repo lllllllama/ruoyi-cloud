@@ -272,6 +272,14 @@ $submission1Body = Assert-QaSuccess -Response $submission1Response -Label 'creat
 $submission1 = $submission1Body.data
 Add-QaCase 'SUBMISSION-1-CREATE' ($null -ne $submission1.submissionId) $submission1Response.Raw
 
+$mineDraftResponse = Invoke-Api Get "/submission/mine?deliverableId=$($deliverable.deliverableId)" $memberAToken
+$mineDraftRows = @((Assert-QaSuccess -Response $mineDraftResponse -Label 'member mine draft').data)
+$mineDraft = $mineDraftRows | Where-Object submissionId -eq $submission1.submissionId | Select-Object -First 1
+Add-QaCase 'SUBMISSION-MINE-FINDS-OWN-DRAFT' ($null -ne $mineDraft -and $mineDraft.status -eq '0') $mineDraftResponse.Raw
+$coreMineResponse = Invoke-Api Get "/submission/mine?deliverableId=$($deliverable.deliverableId)" $coreAToken
+$coreMineRows = @((Assert-QaSuccess -Response $coreMineResponse -Label 'core mine isolation').data)
+Add-QaCase 'SUBMISSION-MINE-DOES-NOT-LEAK-OTHER-USERS' ($null -eq ($coreMineRows | Where-Object submissionId -eq $submission1.submissionId | Select-Object -First 1)) $coreMineResponse.Raw
+
 $identity = Get-DbScalar "select concat(group_id,',',framework_id,',',task_id,',',submit_user_id,',',submit_dept_id,',',status,',',version) from task_submission where submission_id=$($submission1.submissionId)"
 $expectedIdentity = "$groupA,$($frameworkA.frameworkId),$($leaf.taskId),9103,104,0,0"
 Add-QaCase 'SUBMISSION-IDENTITY-FROM-TOKEN-AND-DB' ($identity -eq $expectedIdentity) $identity
@@ -320,6 +328,10 @@ $submit1 = Invoke-Api Put "/submission/$($submission1.submissionId)/submit" $mem
 Add-QaCase 'WORKFLOW-DRAFT-TO-PENDING' (Test-QaSuccessResponse $submit1) $submit1.Raw
 $pendingStatus = Get-DbScalar "select status from task_submission where submission_id=$($submission1.submissionId)"
 Add-QaCase 'WORKFLOW-PENDING-DB' ($pendingStatus -eq '1') $pendingStatus
+$minePendingResponse = Invoke-Api Get "/submission/mine?deliverableId=$($deliverable.deliverableId)" $memberAToken
+$minePendingRows = @((Assert-QaSuccess -Response $minePendingResponse -Label 'member mine pending').data)
+$minePending = $minePendingRows | Where-Object submissionId -eq $submission1.submissionId | Select-Object -First 1
+Add-QaCase 'SUBMISSION-MINE-KEEPS-PENDING-VISIBLE' ($null -ne $minePending -and $minePending.status -eq '1') $minePendingResponse.Raw
 
 $pendingEdit = Invoke-Api Put '/submission' $memberAToken @{
     submissionId = $submission1.submissionId

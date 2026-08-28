@@ -20,6 +20,7 @@
 
     <div class="action-bar">
       <el-button @click="$router.back()">返回</el-button>
+      <el-button v-if="form.submissionId && editable" type="danger" plain :loading="saving" @click="remove">删除</el-button>
       <el-button v-if="editable" :loading="saving" @click="save(false)">保存草稿</el-button>
       <el-button v-if="editable" type="primary" :loading="saving" @click="save(true)">{{ form.status === '2' ? '重新提交' : '提交审核' }}</el-button>
     </div>
@@ -28,7 +29,7 @@
 
 <script>
 import { getDeliverable } from '@/api/research/deliverable'
-import { getSubmission, addSubmission, updateSubmission, submitSubmission, resubmitSubmission, listSubmissionAttachments, addSubmissionAttachment, deleteSubmissionAttachment, downloadSubmissionAttachment } from '@/api/research/submission'
+import { getSubmission, addSubmission, updateSubmission, deleteSubmission, submitSubmission, resubmitSubmission, listSubmissionAttachments, addSubmissionAttachment, deleteSubmissionAttachment, downloadSubmissionAttachment } from '@/api/research/submission'
 
 export default {
   name: 'ResearchSubmission',
@@ -96,6 +97,15 @@ export default {
         this.form = detail.data || {}
         this.attachments = files.data || []
       })
+    },
+    remove() {
+      this.$modal.confirm('确认删除当前成果提交吗？').then(() => {
+        this.saving = true
+        return deleteSubmission(this.form.submissionId)
+      }).then(() => {
+        this.$modal.msgSuccess('删除成功')
+        this.$router.back()
+      }).catch(() => {}).finally(() => { this.saving = false })
     },
     removeAttachment(item) { this.$modal.confirm('确认删除附件“' + item.originalName + '”吗？').then(() => deleteSubmissionAttachment(item.attachmentId)).then(() => this.reload()).catch(() => {}) },
     download(item) { downloadSubmissionAttachment(item.attachmentId).then(blob => { const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = item.originalName || 'attachment'; link.click(); URL.revokeObjectURL(link.href) }) }

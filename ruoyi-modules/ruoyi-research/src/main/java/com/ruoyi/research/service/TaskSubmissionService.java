@@ -9,6 +9,8 @@ public interface TaskSubmissionService
 
     List<TaskSubmission> selectList(TaskSubmission query);
 
+    List<TaskSubmission> selectMine(Long deliverableId);
+
     int insertDraft(TaskSubmission submission);
 
     int updateDraft(TaskSubmission submission);

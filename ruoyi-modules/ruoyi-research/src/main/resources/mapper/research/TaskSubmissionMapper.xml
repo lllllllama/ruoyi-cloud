@@ -78,6 +78,13 @@
         order by s.create_time desc, s.submission_id desc
     </select>
 
+    <select id="selectMine" resultMap="TaskSubmissionResult">
+        <include refid="selectTaskSubmission"/>
+        and s.deliverable_id = #{deliverableId}
+        and s.submit_user_id = #{userId}
+        order by coalesce(s.update_time, s.create_time) desc, s.submission_id desc
+    </select>
+
     <insert id="insert" parameterType="com.ruoyi.research.domain.TaskSubmission"
             useGeneratedKeys="true" keyProperty="submissionId">
         insert into task_submission
