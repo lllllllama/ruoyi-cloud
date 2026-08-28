@@ -1,5 +1,6 @@
 package com.ruoyi.fund.service.impl;
 
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.when;
@@ -14,6 +15,8 @@ import org.mockito.junit.MockitoJUnitRunner;
 import com.ruoyi.common.core.context.SecurityContextHolder;
 import com.ruoyi.common.core.exception.ServiceException;
 import com.ruoyi.fund.domain.FundProjectBudget;
+import com.ruoyi.fund.domain.vo.FundAllocationOverviewVo;
+import com.ruoyi.fund.domain.vo.FundUseOverviewVo;
 import com.ruoyi.fund.mapper.FundAllocationPlanMapper;
 import com.ruoyi.fund.mapper.FundAllocationRecordMapper;
 import com.ruoyi.fund.mapper.FundProjectBudgetMapper;
@@ -74,6 +77,40 @@ public class FundBudgetServiceImplTest
         assertDenied(() -> service.update(budget("100")));
     }
 
+    @Test
+    public void allocationOverviewExposesHistoricalOverAllocation()
+    {
+        when(mapper.selectByTopicId(1L)).thenReturn(budget("1000"));
+        when(allocationPlanMapper.sumPlanAmount(1L, null)).thenReturn(money("900"));
+        when(allocationRecordMapper.sumByTopicId(1L)).thenReturn(money("1200"));
+
+        FundAllocationOverviewVo overview = service.allocationOverview(1L);
+
+        assertMoney("1000", overview.getTotalAmount());
+        assertMoney("900", overview.getPlannedAllocation());
+        assertMoney("1200", overview.getActualAllocation());
+        assertMoney("0", overview.getRemainingAllocation());
+        assertMoney("200", overview.getOverAllocation());
+    }
+
+    @Test
+    public void useOverviewExposesActualFundingAndAvailableAmount()
+    {
+        when(mapper.selectByTopicId(1L)).thenReturn(budget("1000"));
+        when(allocationRecordMapper.sumByTopicId(1L)).thenReturn(money("1000"));
+        when(usePlanMapper.sumPlanAmount(1L, null)).thenReturn(money("700"));
+        when(useRecordMapper.sumByTopicId(1L)).thenReturn(money("800"));
+
+        FundUseOverviewVo overview = service.useOverview(1L);
+
+        assertMoney("1000", overview.getTotalAmount());
+        assertMoney("1000", overview.getActualAllocation());
+        assertMoney("700", overview.getPlannedUse());
+        assertMoney("800", overview.getActualUse());
+        assertMoney("200", overview.getAvailableAmount());
+        assertMoney("100", overview.getOverspend());
+    }
+
     private FundProjectBudget budget(String total)
     {
         FundProjectBudget budget = new FundProjectBudget();
@@ -97,4 +134,9 @@ public class FundBudgetServiceImplTest
     }
 
     private BigDecimal money(String value) { return new BigDecimal(value).setScale(2); }
+
+    private void assertMoney(String expected, BigDecimal actual)
+    {
+        assertEquals(0, money(expected).compareTo(actual));
+    }
 }

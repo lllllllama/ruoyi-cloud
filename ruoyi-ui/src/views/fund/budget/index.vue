@@ -47,9 +47,17 @@
     </el-dialog>
 
     <el-dialog title="资金统计" :visible.sync="overviewOpen" width="720px">
+      <el-alert
+        v-if="overview && Number(overview.overAllocation) > 0"
+        title="检测到历史实际拨付超过项目总资金，请核对拨付记录。"
+        type="error"
+        :closable="false"
+        show-icon
+        class="mb8"
+      />
       <el-row v-if="overview" :gutter="12">
         <el-col v-for="item in cards" :key="item.key" :span="8">
-          <el-card shadow="never" class="money-card">
+          <el-card shadow="never" class="money-card" :class="{'is-danger':item.danger && Number(overview[item.key]) > 0}">
             <div class="label">{{ item.label }}</div>
             <div class="amount">{{ money(overview[item.key]) }}</div>
           </el-card>
@@ -82,9 +90,12 @@ export default {
         { key: 'totalAmount', label: '课题总资金（元）' },
         { key: 'plannedAllocation', label: '计划拨付（元）' },
         { key: 'actualAllocation', label: '实际拨付（元）' },
+        { key: 'remainingAllocation', label: '可拨余额（元）' },
+        { key: 'overAllocation', label: '超拨金额（元）', danger: true },
         { key: 'plannedUse', label: '计划使用（元）' },
         { key: 'actualUse', label: '实际使用（元）' },
-        { key: 'overspend', label: '使用超计划（元）' }
+        { key: 'availableAmount', label: '当前可用（元）' },
+        { key: 'overspend', label: '使用超计划（元）', danger: true }
       ]
     }
   },
@@ -146,4 +157,6 @@ export default {
 .money-card { margin-bottom: 12px; text-align: center; }
 .money-card .label { color: #909399; }
 .money-card .amount { margin-top: 10px; font-size: 22px; font-weight: 600; }
+.money-card.is-danger { background: #fff5f5; border-color: #fbc4c4; }
+.money-card.is-danger .amount { color: #d92d20; }
 </style>

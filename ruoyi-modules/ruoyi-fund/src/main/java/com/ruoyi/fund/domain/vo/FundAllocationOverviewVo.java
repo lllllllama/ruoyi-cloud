@@ -9,6 +9,7 @@ public class FundAllocationOverviewVo
     private BigDecimal plannedAllocation;
     private BigDecimal actualAllocation;
     private BigDecimal remainingAllocation;
+    private BigDecimal overAllocation;
 
     public Long getGroupId() { return groupId; }
     public void setGroupId(Long groupId) { this.groupId = groupId; }
@@ -20,4 +21,6 @@ public class FundAllocationOverviewVo
     public void setActualAllocation(BigDecimal actualAllocation) { this.actualAllocation = actualAllocation; }
     public BigDecimal getRemainingAllocation() { return remainingAllocation; }
     public void setRemainingAllocation(BigDecimal remainingAllocation) { this.remainingAllocation = remainingAllocation; }
+    public BigDecimal getOverAllocation() { return overAllocation; }
+    public void setOverAllocation(BigDecimal overAllocation) { this.overAllocation = overAllocation; }
 }
