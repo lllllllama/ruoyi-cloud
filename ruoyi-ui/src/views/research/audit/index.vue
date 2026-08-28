@@ -12,7 +12,15 @@
       <el-table-column label="交付成果" prop="deliverableName" min-width="160" show-overflow-tooltip />
       <el-table-column label="提交名称" prop="submissionName" min-width="180" show-overflow-tooltip />
       <el-table-column label="提交时间" prop="submitTime" width="160" />
-      <el-table-column label="操作" width="180" fixed="right"><template slot-scope="scope"><el-button type="text" icon="el-icon-view" @click="view(scope.row)">查看</el-button><el-button v-hasPermi="['task:submission:audit']" type="text" icon="el-icon-check" @click="audit(scope.row, true)">通过</el-button><el-button v-hasPermi="['task:submission:audit']" type="text" icon="el-icon-close" @click="audit(scope.row, false)">退回</el-button></template></el-table-column>
+      <el-table-column label="操作" width="230" fixed="right">
+        <template slot-scope="scope">
+          <div class="audit-actions">
+            <el-button type="text" icon="el-icon-view" @click="view(scope.row)">查看</el-button>
+            <el-button v-hasPermi="['task:submission:audit']" type="text" icon="el-icon-check" @click="audit(scope.row, true)">通过</el-button>
+            <el-button v-hasPermi="['task:submission:audit']" type="text" icon="el-icon-close" @click="audit(scope.row, false)">退回</el-button>
+          </div>
+        </template>
+      </el-table-column>
     </el-table>
     <pagination v-show="total > 0" :total="total" :page.sync="query.pageNum" :limit.sync="query.pageSize" @pagination="load" />
 
@@ -51,3 +59,16 @@ export default {
   }
 }
 </script>
+
+<style scoped>
+.audit-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: nowrap;
+  white-space: nowrap;
+}
+
+.audit-actions .el-button {
+  flex: none;
+}
+</style>

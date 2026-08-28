@@ -209,6 +209,66 @@ def check_admin_pages(page: Page, qa: QaRun, base_url: str, prefix: str) -> None
         navigate(page, base_url, path)
         visible = page.get_by_text(marker, exact=False).first.is_visible()
         qa.check(f"{prefix}-PAGE-{path}", visible, marker)
+        if path == "/research/audit":
+            check_audit_action_layout(page, qa, prefix)
+
+
+def check_audit_action_layout(page: Page, qa: QaRun, prefix: str) -> None:
+    fixture_injected = False
+    if page.locator(".el-table__fixed-right .el-table__fixed-body-wrapper tbody tr").count() == 0:
+        fixture_injected = page.evaluate("""
+            () => {
+              const root = document.querySelector('.app-container')
+              const view = root && root.__vue__
+              if (!view) return false
+              view.rows = [{
+                submissionId: -1,
+                groupName: '布局回归课题',
+                taskName: '布局回归任务',
+                deliverableName: '布局回归成果',
+                submissionName: '布局回归提交',
+                submitTime: '2026-08-28 00:00:00'
+              }]
+              view.total = 1
+              return true
+            }
+        """)
+        if fixture_injected:
+            page.locator(".el-table__fixed-right .el-table__fixed-body-wrapper tbody tr").wait_for(
+                state="visible", timeout=5_000
+            )
+    result = page.evaluate("""
+        () => {
+          const rows = Array.from(document.querySelectorAll(
+            '.el-table__fixed-right .el-table__fixed-body-wrapper tbody tr'
+          )).filter(row => row.getBoundingClientRect().height > 0)
+          return {
+            rowCount: rows.length,
+            rows: rows.map(row => {
+              const rowBox = row.getBoundingClientRect()
+              const buttons = Array.from(row.querySelectorAll('button')).filter(button => {
+                const style = window.getComputedStyle(button)
+                const box = button.getBoundingClientRect()
+                return style.visibility !== 'hidden' && style.display !== 'none' && box.height > 0
+              })
+              const boxes = buttons.map(button => button.getBoundingClientRect())
+              const centers = boxes.map(box => box.top + box.height / 2)
+              return {
+                buttonCount: buttons.length,
+                labels: buttons.map(button => button.innerText.trim()),
+                singleLine: centers.length > 0 && Math.max(...centers) - Math.min(...centers) <= 2,
+                contained: boxes.every(box => box.top >= rowBox.top - 1 && box.bottom <= rowBox.bottom + 1)
+              }
+            })
+          }
+        }
+    """)
+    result["fixtureInjected"] = fixture_injected
+    valid = result["rowCount"] > 0 and all(
+        row["buttonCount"] == 3 and row["singleLine"] and row["contained"]
+        for row in result["rows"]
+    )
+    qa.check(f"{prefix}-AUDIT-ACTIONS-VISIBLE-SINGLE-LINE", valid, json.dumps(result, ensure_ascii=False))
 
 
 def check_role_navigation(browser, qa: QaRun, base_url: str, browser_name: str) -> None:
