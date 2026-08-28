@@ -31,7 +31,6 @@ import com.ruoyi.fund.service.IFundAttachmentService;
 import com.ruoyi.fund.service.IFundOperationLogService;
 import com.ruoyi.fund.service.IFundOrgService;
 import com.ruoyi.fund.service.IFundResearchService;
-import com.ruoyi.research.api.domain.ResearchGroupDto;
 import com.ruoyi.system.api.domain.FundDeptOption;
 import com.ruoyi.system.api.domain.FundUserOption;
 
@@ -98,7 +97,7 @@ public class FundAllocationServiceImplTest
     }
 
     @Test
-    public void responsibleAndUnitMemberPermissionBranchesAreEnforced()
+    public void responsibleAndUnitManagerFinishPermissionBranchesAreEnforced()
     {
         FundAllocationPlan plan = runningPlan();
         plan.setResponsibleUserId(10L);
@@ -107,7 +106,7 @@ public class FundAllocationServiceImplTest
         service.finishCheck(10L);
         login(11L);
         doThrow(new ServiceException("无计划操作权限"))
-                .when(permissionService).assertCanOperateAllocation(plan, 11L);
+                .when(permissionService).assertCanFinishAllocation(plan, 11L);
         assertDenied(() -> service.finishCheck(10L));
 
         plan.setResponsibleUserId(null);
@@ -115,7 +114,7 @@ public class FundAllocationServiceImplTest
         service.finishCheck(10L);
         login(13L);
         doThrow(new ServiceException("无计划操作权限"))
-                .when(permissionService).assertCanOperateAllocation(plan, 13L);
+                .when(permissionService).assertCanFinishAllocation(plan, 13L);
         assertDenied(() -> service.finishCheck(10L));
     }
 
@@ -258,20 +257,19 @@ public class FundAllocationServiceImplTest
     }
 
     @Test
-    public void authenticatedUserCanReadAllocationPlanButCannotModifyForeignRecordById()
+    public void userFromAnotherResearchGroupCannotReadPlanOrModifyAllocationRecordById()
     {
         FundAllocationPlan foreignPlan = runningPlan();
         foreignPlan.setPlanId(99L);
         foreignPlan.setTopicId(2L);
         when(planMapper.selectById(99L)).thenReturn(foreignPlan);
         when(planMapper.selectForUpdate(99L)).thenReturn(foreignPlan);
-        ResearchGroupDto group = new ResearchGroupDto();
-        group.setGroupName("Public allocation group");
-        when(researchService.getGroup(2L)).thenReturn(group);
         doThrow(new ServiceException("无课题访问权限"))
                 .when(permissionService).assertGroupMember(2L, 10L);
+        doThrow(new ServiceException("无计划操作权限"))
+                .when(permissionService).assertCanOperateAllocation(foreignPlan, 10L);
         login(10L);
-        assertSame(foreignPlan, service.selectPlan(99L));
+        assertDenied(() -> service.selectPlan(99L));
 
         FundAllocationRecord stored = new FundAllocationRecord();
         stored.setRecordId(88L);

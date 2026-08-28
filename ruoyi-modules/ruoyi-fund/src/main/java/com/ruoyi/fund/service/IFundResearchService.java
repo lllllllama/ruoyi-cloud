@@ -2,6 +2,7 @@ package com.ruoyi.fund.service;
 
 import java.util.List;
 import com.ruoyi.research.api.domain.ResearchGroupDto;
+import com.ruoyi.research.api.domain.ResearchGroupMemberDto;
 
 public interface IFundResearchService
 {
@@ -18,6 +19,8 @@ public interface IFundResearchService
     boolean isUnitManager(Long groupId, Long deptId, Long userId);
 
     boolean isGroupUnit(Long groupId, Long deptId);
+
+    List<ResearchGroupMemberDto> getSelectableMembers(Long groupId, Long deptId);
 
     void assertGroupMember(Long groupId, Long userId);
 

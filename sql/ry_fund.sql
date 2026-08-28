@@ -70,6 +70,26 @@ CREATE TABLE IF NOT EXISTS fund_use_record (
   PRIMARY KEY(use_record_id), KEY idx_plan(use_plan_id), KEY idx_submit_user(submit_user_id)
 ) ENGINE=InnoDB COMMENT='资金使用记录';
 
+CREATE TABLE IF NOT EXISTS fund_attachment (
+  attachment_id bigint NOT NULL AUTO_INCREMENT, group_id bigint NOT NULL,
+  business_type varchar(32) NOT NULL, business_id bigint NOT NULL,
+  file_name varchar(255) NOT NULL, original_name varchar(255) NOT NULL,
+  file_url varchar(1000) NOT NULL, file_size bigint DEFAULT NULL, file_type varchar(64) DEFAULT NULL,
+  upload_user_id bigint NOT NULL, upload_time datetime NOT NULL, del_flag char(1) NOT NULL DEFAULT '0',
+  PRIMARY KEY(attachment_id), KEY idx_fund_attachment_group(group_id),
+  KEY idx_fund_attachment_business(business_type,business_id), KEY idx_fund_attachment_uploader(upload_user_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='资金业务附件';
+
+CREATE TABLE IF NOT EXISTS fund_upload_receipt (
+  upload_token char(32) NOT NULL, file_name varchar(255) NOT NULL, original_name varchar(255) NOT NULL,
+  file_url varchar(1000) NOT NULL, file_size bigint NOT NULL, file_type varchar(64) NOT NULL,
+  upload_user_id bigint NOT NULL, upload_time datetime NOT NULL, expire_time datetime NOT NULL,
+  used_flag char(1) NOT NULL DEFAULT '0', used_time datetime DEFAULT NULL,
+  business_type varchar(32) DEFAULT NULL, business_id bigint DEFAULT NULL,
+  PRIMARY KEY(upload_token), KEY idx_fund_upload_user(upload_user_id,used_flag),
+  KEY idx_fund_upload_expire(expire_time,used_flag), KEY idx_fund_upload_business(business_type,business_id)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COMMENT='资金附件一次性上传凭证';
+
 -- 菜单与按钮权限安装到系统库。采用动态ID，避免与已上线系统的自定义菜单冲突。
 USE `ry-cloud`;
 
@@ -107,17 +127,17 @@ FROM (
   SELECT '拨付修改',@allocation_menu_id,2,'fund:allocation:edit' UNION ALL
   SELECT '拨付删除',@allocation_menu_id,3,'fund:allocation:remove' UNION ALL
   SELECT '指定责任人',@allocation_menu_id,4,'fund:allocation:assign' UNION ALL
-  SELECT '提交拨付',@allocation_menu_id,5,'fund:allocation:submit' UNION ALL
+  SELECT '拨付记录',@allocation_menu_id,5,'fund:allocation:record' UNION ALL
   SELECT '结束拨付',@allocation_menu_id,6,'fund:allocation:finish' UNION ALL
   SELECT '使用计划新增',@use_menu_id,1,'fund:use:add' UNION ALL
   SELECT '使用计划修改',@use_menu_id,2,'fund:use:edit' UNION ALL
   SELECT '使用计划删除',@use_menu_id,3,'fund:use:remove' UNION ALL
-  SELECT '提交使用记录',@use_menu_id,4,'fund:use:submit' UNION ALL
+  SELECT '使用记录',@use_menu_id,4,'fund:use:record' UNION ALL
   SELECT '结束使用计划',@use_menu_id,5,'fund:use:finish'
 ) x
 WHERE NOT EXISTS (SELECT 1 FROM sys_menu m WHERE m.perms=x.perms);
 
--- PPT要求拨付计划与拨付记录所有系统账号均可查看：给现有正常角色挂载“资金管理/拨付管理”菜单。
+-- 所有登录用户可进入拨付页查看公开汇总；计划、记录和附件由后端按课题成员关系校验。
 INSERT IGNORE INTO sys_role_menu(role_id,menu_id) SELECT role_id,@fund_menu_id FROM sys_role WHERE status='0' AND del_flag='0';
 INSERT IGNORE INTO sys_role_menu(role_id,menu_id) SELECT role_id,@allocation_menu_id FROM sys_role WHERE status='0' AND del_flag='0';
 -- 使用管理菜单也挂给现有角色，真正的数据可见性由 fund-service 按课题成员关系二次校验。

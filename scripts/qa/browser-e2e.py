@@ -356,9 +356,59 @@ def check_fixed_action_layout(
     qa.check(f"{prefix}-{page_name}-ACTIONS-VISIBLE-SINGLE-LINE", valid, json.dumps(result, ensure_ascii=False))
 
 
+def check_fund_record_button(
+    page: Page,
+    qa: QaRun,
+    base_url: str,
+    prefix: str,
+    path: str,
+    plan_field: str,
+    records_field: str,
+    open_field: str,
+    plan: dict,
+    dialog_marker: str,
+    button_text: str,
+) -> None:
+    navigate(page, base_url, path)
+    injected = page.evaluate("""
+        data => {
+          const root = document.querySelector('.app-container')
+          const view = root && root.__vue__
+          if (!view) return false
+          view[data.planField] = data.plan
+          view[data.recordsField] = []
+          view[data.openField] = true
+          return true
+        }
+    """, {
+        "planField": plan_field,
+        "recordsField": records_field,
+        "openField": open_field,
+        "plan": plan,
+    })
+    dialog = page.locator(".el-dialog:visible").filter(has_text=dialog_marker).last
+    if injected:
+        dialog.wait_for(state="visible", timeout=5_000)
+    allowed_visible = injected and visible_button(dialog, button_text).is_visible()
+    qa.check(f"{prefix}-{button_text}-CAPABILITY-ALLOWED", allowed_visible, f"injected={injected}")
+
+    page.evaluate("""
+        data => {
+          const root = document.querySelector('.app-container')
+          const view = root && root.__vue__
+          view[data.planField].canSubmitRecord = false
+        }
+    """, {"planField": plan_field})
+    page.wait_for_timeout(100)
+    denied_hidden = dialog.locator("button:visible").filter(has_text=button_text).count() == 0
+    qa.check(f"{prefix}-{button_text}-CAPABILITY-DENIED", denied_hidden, f"hidden={denied_hidden}")
+
+
 def check_role_navigation(browser, qa: QaRun, base_url: str, browser_name: str) -> None:
     cases = [
         ("a_leader", ["年度任务", "任务清单", "未审资料", "使用管理"], ["课题管理"]),
+        ("a_member", ["我的任务", "拨付管理", "使用管理"], ["课题管理"]),
+        ("alloc_user", ["拨付管理"], ["使用管理"]),
         ("outsider", ["拨付管理"], ["使用管理", "任务调度"]),
     ]
     for username, expected, forbidden in cases:
@@ -371,6 +421,22 @@ def check_role_navigation(browser, qa: QaRun, base_url: str, browser_name: str) 
                 qa.check(f"{browser_name}-{username}-MENU-{item}", item in menu_text, menu_text)
             for item in forbidden:
                 qa.check(f"{browser_name}-{username}-NO-MENU-{item}", item not in menu_text, menu_text)
+            if username == "a_member":
+                check_fund_record_button(
+                    page, qa, base_url, f"{browser_name}-{username}", "/fund/use",
+                    "recordPlan", "records", "recordsOpen",
+                    {"usePlanId": -1, "useName": "权限渲染测试", "status": "0",
+                     "forceFinish": "0", "canSubmitRecord": True},
+                    "使用记录", "提交使用",
+                )
+            if username == "alloc_user":
+                check_fund_record_button(
+                    page, qa, base_url, f"{browser_name}-{username}", "/fund/allocation",
+                    "recordPlan", "records", "recordsOpen",
+                    {"planId": -1, "allocationName": "权限渲染测试", "status": "0",
+                     "canSubmitRecord": True},
+                    "拨付记录", "提交拨付",
+                )
             if username == "outsider":
                 navigate(page, base_url, "/fund/allocation")
                 qa.check(f"{browser_name}-OUTSIDER-ALLOCATION-PAGE", page.get_by_text("拨付", exact=False).first.is_visible(), page.url)

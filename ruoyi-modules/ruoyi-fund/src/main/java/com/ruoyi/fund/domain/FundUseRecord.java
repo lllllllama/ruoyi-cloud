@@ -36,11 +36,15 @@ public class FundUseRecord extends BaseEntity
     /** 使用凭证URL，逗号分隔 */
     @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
     private String voucherUrls;
+    /** 由资金附件上传接口签发的一次性凭证，逗号分隔 */
+    @JsonProperty(access = JsonProperty.Access.WRITE_ONLY)
+    private String attachmentTokens;
     /** 提交人ID */
     private Long submitUserId;
     /** 提交人名称 */
     private String submitUserName;
     private List<FundAttachment> attachments;
+    private Boolean canEdit;
 
     public Long getUseRecordId() { return useRecordId; }
     public void setUseRecordId(Long useRecordId) { this.useRecordId = useRecordId; }
@@ -56,10 +60,14 @@ public class FundUseRecord extends BaseEntity
     public void setFundDesc(String fundDesc) { this.fundDesc = fundDesc; }
     public String getVoucherUrls() { return voucherUrls; }
     public void setVoucherUrls(String voucherUrls) { this.voucherUrls = voucherUrls; }
+    public String getAttachmentTokens() { return attachmentTokens; }
+    public void setAttachmentTokens(String attachmentTokens) { this.attachmentTokens = attachmentTokens; }
     public Long getSubmitUserId() { return submitUserId; }
     public void setSubmitUserId(Long submitUserId) { this.submitUserId = submitUserId; }
     public String getSubmitUserName() { return submitUserName; }
     public void setSubmitUserName(String submitUserName) { this.submitUserName = submitUserName; }
     public List<FundAttachment> getAttachments() { return attachments; }
     public void setAttachments(List<FundAttachment> attachments) { this.attachments = attachments; }
+    public Boolean getCanEdit() { return canEdit; }
+    public void setCanEdit(Boolean canEdit) { this.canEdit = canEdit; }
 }

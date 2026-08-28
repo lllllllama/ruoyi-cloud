@@ -10,6 +10,7 @@ import com.ruoyi.common.core.exception.ServiceException;
 import com.ruoyi.fund.service.IFundResearchService;
 import com.ruoyi.research.api.RemoteResearchService;
 import com.ruoyi.research.api.domain.ResearchGroupDto;
+import com.ruoyi.research.api.domain.ResearchGroupMemberDto;
 import com.ruoyi.research.api.domain.ResearchGroupUnitDto;
 
 @Service
@@ -78,6 +79,14 @@ public class FundResearchServiceImpl implements IFundResearchService
             }
         }
         return false;
+    }
+
+    @Override
+    public List<ResearchGroupMemberDto> getSelectableMembers(Long groupId, Long deptId)
+    {
+        List<ResearchGroupMemberDto> members = data(remoteService.getSelectableMembers(
+                groupId, deptId, SecurityConstants.INNER));
+        return members == null ? Collections.<ResearchGroupMemberDto>emptyList() : members;
     }
 
     @Override

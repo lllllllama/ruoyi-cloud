@@ -6,6 +6,7 @@ export function addAllocationPlan(data){return request({url:base+'/plan',method:
 export function updateAllocationPlan(data){return request({url:base+'/plan',method:'put',data})}
 export function delAllocationPlan(id){return request({url:base+'/plan/'+id,method:'delete'})}
 export function assignAllocation(id,userId){return request({url:base+'/plan/'+id+'/assign',method:'put',data:{responsibleUserId:userId}})}
+export function listAllocationCandidateUsers(id){return request({url:base+'/plan/'+id+'/candidate-users',method:'get'})}
 export function listAllocationRecords(id){return request({url:base+'/plan/'+id+'/records',method:'get'})}
 export function addAllocationRecord(data){return request({url:base+'/record',method:'post',data})}
 export function updateAllocationRecord(data){return request({url:base+'/record',method:'put',data})}

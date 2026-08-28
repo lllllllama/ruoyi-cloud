@@ -63,6 +63,10 @@ public class FundAllocationPlan extends BaseEntity
     /** 结束时间 */
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private Date finishTime;
+    /** Current-user capabilities; informational only, server checks remain authoritative. */
+    private Boolean canSubmitRecord;
+    private Boolean canAssignResponsible;
+    private Boolean canFinish;
 
     public Long getPlanId() { return planId; }
     public void setPlanId(Long planId) { this.planId = planId; }
@@ -106,4 +110,10 @@ public class FundAllocationPlan extends BaseEntity
     public void setFinishUserId(Long finishUserId) { this.finishUserId = finishUserId; }
     public Date getFinishTime() { return finishTime; }
     public void setFinishTime(Date finishTime) { this.finishTime = finishTime; }
+    public Boolean getCanSubmitRecord() { return canSubmitRecord; }
+    public void setCanSubmitRecord(Boolean canSubmitRecord) { this.canSubmitRecord = canSubmitRecord; }
+    public Boolean getCanAssignResponsible() { return canAssignResponsible; }
+    public void setCanAssignResponsible(Boolean canAssignResponsible) { this.canAssignResponsible = canAssignResponsible; }
+    public Boolean getCanFinish() { return canFinish; }
+    public void setCanFinish(Boolean canFinish) { this.canFinish = canFinish; }
 }

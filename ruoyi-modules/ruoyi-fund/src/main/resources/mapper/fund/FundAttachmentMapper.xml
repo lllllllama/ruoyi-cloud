@@ -36,6 +36,11 @@
       (#{groupId},#{businessType},#{businessId},#{fileName},#{originalName},#{fileUrl},#{fileSize},#{fileType},#{uploadUserId},#{uploadTime},#{delFlag})
   </insert>
 
+  <select id="countByBusiness" resultType="int">
+    select count(1) from fund_attachment
+    where business_type=#{businessType} and business_id=#{businessId} and del_flag='0'
+  </select>
+
   <update id="deleteByBusiness">
     update fund_attachment set del_flag='2'
     where business_type=#{businessType} and business_id=#{businessId} and del_flag='0'

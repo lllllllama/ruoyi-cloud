@@ -31,6 +31,7 @@ public class FundUsePlan extends BaseEntity
     @Digits(integer = 16, fraction = 2, message = "使用金额最多保留2位小数")
     private BigDecimal planAmount;
     /** 责任人ID */
+    @NotNull(message = "使用计划责任人不能为空")
     private Long responsibleUserId;
     /** 责任人名称快照 */
     private String responsibleUserName;
@@ -57,6 +58,10 @@ public class FundUsePlan extends BaseEntity
     private Long confirmUserId;
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")
     private Date confirmTime;
+    /** Current-user capabilities; informational only, server checks remain authoritative. */
+    private Boolean canSubmitRecord;
+    private Boolean canFinish;
+    private Boolean canConfirmForceFinish;
 
     public Long getUsePlanId() { return usePlanId; }
     public void setUsePlanId(Long usePlanId) { this.usePlanId = usePlanId; }
@@ -98,4 +103,10 @@ public class FundUsePlan extends BaseEntity
     public void setConfirmUserId(Long confirmUserId) { this.confirmUserId = confirmUserId; }
     public Date getConfirmTime() { return confirmTime; }
     public void setConfirmTime(Date confirmTime) { this.confirmTime = confirmTime; }
+    public Boolean getCanSubmitRecord() { return canSubmitRecord; }
+    public void setCanSubmitRecord(Boolean canSubmitRecord) { this.canSubmitRecord = canSubmitRecord; }
+    public Boolean getCanFinish() { return canFinish; }
+    public void setCanFinish(Boolean canFinish) { this.canFinish = canFinish; }
+    public Boolean getCanConfirmForceFinish() { return canConfirmForceFinish; }
+    public void setCanConfirmForceFinish(Boolean canConfirmForceFinish) { this.canConfirmForceFinish = canConfirmForceFinish; }
 }

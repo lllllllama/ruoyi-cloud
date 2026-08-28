@@ -67,6 +67,13 @@ public class FundAllocationController extends BaseController
         return toAjax(service.assign(id, request.getResponsibleUserId()));
     }
 
+    @RequiresPermissions("fund:allocation:assign")
+    @GetMapping("/plan/{id}/candidate-users")
+    public AjaxResult candidateUsers(@PathVariable Long id)
+    {
+        return AjaxResult.success(service.selectCandidateUsers(id));
+    }
+
     @GetMapping("/plan/{id}/records")
     public AjaxResult records(@PathVariable Long id) { return AjaxResult.success(service.selectRecords(id)); }
 

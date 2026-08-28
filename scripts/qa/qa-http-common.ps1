@@ -93,7 +93,8 @@ function Invoke-QaMultipartUpload {
         [Parameter(Mandatory = $true)][string]$Token,
         [Parameter(Mandatory = $true)][string]$FileName,
         [Parameter(Mandatory = $true)][byte[]]$Content,
-        [string]$ContentType = 'application/octet-stream'
+        [string]$ContentType = 'application/octet-stream',
+        [string]$Path = '/file/upload'
     )
 
     Add-Type -AssemblyName System.Net.Http
@@ -106,7 +107,7 @@ function Invoke-QaMultipartUpload {
         $fileContent.Headers.ContentType =
             New-Object System.Net.Http.Headers.MediaTypeHeaderValue($ContentType)
         $multipart.Add($fileContent, 'file', $FileName)
-        $response = $client.PostAsync($BaseUrl.TrimEnd('/') + '/file/upload', $multipart).Result
+        $response = $client.PostAsync($BaseUrl.TrimEnd('/') + $Path, $multipart).Result
         $raw = $response.Content.ReadAsStringAsync().Result
         $parsed = $null
         try { $parsed = $raw | ConvertFrom-Json } catch { }

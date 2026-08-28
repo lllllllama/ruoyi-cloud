@@ -13,6 +13,9 @@ public interface FundAttachmentMapper
 
     int insert(FundAttachment attachment);
 
+    int countByBusiness(@Param("businessType") String businessType,
+            @Param("businessId") Long businessId);
+
     int deleteByBusiness(@Param("businessType") String businessType,
             @Param("businessId") Long businessId);
 }

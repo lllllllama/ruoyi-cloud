@@ -8,6 +8,6 @@
   <select id="sumByTopicId" resultType="java.math.BigDecimal">select coalesce(sum(r.amount),0) from fund_allocation_record r join fund_allocation_plan p on p.plan_id=r.plan_id and p.del_flag='0' where p.topic_id=#{topicId} and r.del_flag='0'</select>
   <select id="countByPlanId" resultType="int">select count(1) from fund_allocation_record where plan_id=#{planId} and del_flag='0'</select>
   <insert id="insert" useGeneratedKeys="true" keyProperty="recordId">insert into fund_allocation_record(plan_id,allocation_name,amount,allocation_time,fund_desc,voucher_urls,submit_user_id,submit_user_name,create_by,create_time) values(#{planId},#{allocationName},#{amount},#{allocationTime},#{fundDesc},#{voucherUrls},#{submitUserId},#{submitUserName},#{createBy},sysdate())</insert>
-  <update id="update">update fund_allocation_record set allocation_name=#{allocationName},amount=#{amount},allocation_time=#{allocationTime},fund_desc=#{fundDesc},voucher_urls=#{voucherUrls},update_by=#{updateBy},update_time=sysdate() where record_id=#{recordId} and del_flag='0'</update>
+  <update id="update">update fund_allocation_record set allocation_name=#{allocationName},amount=#{amount},allocation_time=#{allocationTime},fund_desc=#{fundDesc},update_by=#{updateBy},update_time=sysdate() where record_id=#{recordId} and del_flag='0'</update>
   <update id="deleteById">update fund_allocation_record set del_flag='2',update_time=sysdate() where record_id=#{recordId}</update>
 </mapper>

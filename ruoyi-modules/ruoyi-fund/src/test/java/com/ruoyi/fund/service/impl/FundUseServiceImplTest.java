@@ -31,6 +31,7 @@ import com.ruoyi.fund.service.IFundAttachmentService;
 import com.ruoyi.fund.service.IFundOperationLogService;
 import com.ruoyi.fund.service.IFundOrgService;
 import com.ruoyi.fund.service.IFundResearchService;
+import com.ruoyi.system.api.domain.FundUserOption;
 
 @RunWith(MockitoJUnitRunner.class)
 public class FundUseServiceImplTest
@@ -56,6 +57,11 @@ public class FundUseServiceImplTest
         budget.setTopicId(1L);
         budget.setTotalAmount(money("100"));
         when(budgetMapper.selectByTopicIdForUpdate(1L)).thenReturn(budget);
+        when(researchService.isGroupMember(1L, 1L)).thenReturn(true);
+        FundUserOption responsible = new FundUserOption();
+        responsible.setUserName("user1");
+        responsible.setNickName("User One");
+        when(org.getUser(1L)).thenReturn(responsible);
         when(planMapper.insert(any(FundUsePlan.class))).thenAnswer(invocation -> {
             ((FundUsePlan) invocation.getArgument(0)).setUsePlanId(ids.incrementAndGet());
             return 1;
@@ -271,6 +277,8 @@ public class FundUseServiceImplTest
         when(planMapper.selectForUpdate(99L)).thenReturn(foreignPlan);
         doThrow(new ServiceException("无课题访问权限"))
                 .when(permissionService).assertGroupMember(2L, 10L);
+        doThrow(new ServiceException("无计划操作权限"))
+                .when(permissionService).assertCanOperateUse(foreignPlan, 10L);
         login(10L);
         assertDenied(() -> service.selectPlan(99L));
 
@@ -307,6 +315,7 @@ public class FundUseServiceImplTest
         FundUsePlan plan = runningPlan();
         plan.setUsePlanId(null);
         plan.setPlanAmount(amount);
+        plan.setResponsibleUserId(1L);
         return plan;
     }
 

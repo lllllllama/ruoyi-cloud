@@ -20,6 +20,7 @@ import com.ruoyi.common.log.enums.BusinessType;
 import com.ruoyi.common.security.annotation.RequiresPermissions;
 import com.ruoyi.common.security.utils.SecurityUtils;
 import com.ruoyi.research.domain.ResearchGroup;
+import com.ruoyi.research.domain.vo.ResearchGroupOptionVo;
 import com.ruoyi.research.service.ResearchGroupService;
 import com.ruoyi.research.service.ResearchPermissionService;
 
@@ -38,7 +39,16 @@ public class ResearchGroupController extends BaseController
     {
         ResearchGroup query = new ResearchGroup();
         query.setStatus("0");
-        return AjaxResult.success(groupService.selectList(query));
+        List<ResearchGroupOptionVo> options = new ArrayList<>();
+        for (ResearchGroup group : groupService.selectList(query))
+        {
+            ResearchGroupOptionVo option = new ResearchGroupOptionVo();
+            option.setGroupId(group.getGroupId());
+            option.setGroupCode(group.getGroupCode());
+            option.setGroupName(group.getGroupName());
+            options.add(option);
+        }
+        return AjaxResult.success(options);
     }
 
     @GetMapping("/accessible")

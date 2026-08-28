@@ -32,29 +32,58 @@ public class FundPermissionServiceImpl implements FundPermissionService
 
     public void assertCanAssignAllocation(FundAllocationPlan plan, Long userId)
     {
-        if (!FundSecurityUtils.isSystemAdmin()
-                && !researchService.isUnitManager(plan.getTopicId(), plan.getAllocationDeptId(), userId))
+        if (!canAssignAllocation(plan, userId))
             throw new ServiceException("仅课题配置的拨付单位负责人可指定责任人");
+    }
+
+    public boolean canAssignAllocation(FundAllocationPlan plan, Long userId)
+    {
+        return FundSecurityUtils.isSystemAdmin()
+                || researchService.isUnitManager(plan.getTopicId(), plan.getAllocationDeptId(), userId);
     }
 
     public void assertCanOperateAllocation(FundAllocationPlan plan, Long userId)
     {
-        if (FundSecurityUtils.isSystemAdmin()) return;
-        researchService.assertGroupMember(plan.getTopicId(), userId);
-        if (plan.getResponsibleUserId() != null && !userId.equals(plan.getResponsibleUserId()))
-            throw new ServiceException("该计划已指定责任人，仅责任人可操作");
-        if (plan.getResponsibleUserId() == null
-                && !researchService.isGroupUnitMember(plan.getTopicId(), plan.getAllocationDeptId(), userId))
-            throw new ServiceException("仅当前课题拨付单位成员可操作未指定责任人的计划");
+        if (!canOperateAllocation(plan, userId))
+            throw new ServiceException("仅当前责任人可操作；未指定责任人时由拨付单位负责人处理");
+    }
+
+    public boolean canOperateAllocation(FundAllocationPlan plan, Long userId)
+    {
+        if (FundSecurityUtils.isSystemAdmin()) return true;
+        if (!researchService.isGroupMember(plan.getTopicId(), userId)) return false;
+        if (plan.getResponsibleUserId() != null)
+            return userId.equals(plan.getResponsibleUserId());
+        return researchService.isUnitManager(plan.getTopicId(), plan.getAllocationDeptId(), userId);
+    }
+
+    public void assertCanFinishAllocation(FundAllocationPlan plan, Long userId)
+    {
+        if (!canFinishAllocation(plan, userId))
+            throw new ServiceException("仅当前责任人或拨付单位负责人可结束拨付计划");
+    }
+
+    public boolean canFinishAllocation(FundAllocationPlan plan, Long userId)
+    {
+        if (FundSecurityUtils.isSystemAdmin()) return true;
+        if (!researchService.isGroupMember(plan.getTopicId(), userId)) return false;
+        return userId.equals(plan.getResponsibleUserId())
+                || researchService.isUnitManager(plan.getTopicId(), plan.getAllocationDeptId(), userId);
     }
 
     public void assertCanOperateUse(FundUsePlan plan, Long userId)
     {
-        if (FundSecurityUtils.isSystemAdmin()) return;
-        researchService.assertGroupMember(plan.getTopicId(), userId);
-        if (plan.getResponsibleUserId() != null && !userId.equals(plan.getResponsibleUserId()))
-            throw new ServiceException("该计划已指定责任人，仅责任人可操作");
-        if (plan.getResponsibleUserId() == null) researchService.assertGroupMember(plan.getTopicId(), userId);
+        if (!canOperateUse(plan, userId))
+            throw new ServiceException("仅当前责任人可操作；历史未指定责任人的计划由课题负责人处理");
+    }
+
+    public boolean canOperateUse(FundUsePlan plan, Long userId)
+    {
+        if (FundSecurityUtils.isSystemAdmin()) return true;
+        if (!researchService.isGroupMember(plan.getTopicId(), userId)) return false;
+        if (plan.getResponsibleUserId() != null)
+            return userId.equals(plan.getResponsibleUserId());
+        return researchService.isGroupLeader(plan.getTopicId(), userId);
     }
 
     public boolean canConfirmForceFinish(Long groupId, Long userId)
@@ -64,8 +93,13 @@ public class FundPermissionServiceImpl implements FundPermissionService
 
     public void assertOwnRecord(Long submitUserId, Long userId)
     {
-        if (!FundSecurityUtils.isSystemAdmin() && !userId.equals(submitUserId))
+        if (!canEditRecord(submitUserId, userId))
             throw new ServiceException("只能修改或删除本人提交的记录");
+    }
+
+    public boolean canEditRecord(Long submitUserId, Long userId)
+    {
+        return FundSecurityUtils.isSystemAdmin() || userId.equals(submitUserId);
     }
 
     public void assertCanAccessBusiness(Long groupId, String businessType, Long userId)

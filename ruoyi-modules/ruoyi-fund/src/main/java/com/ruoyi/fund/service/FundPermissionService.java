@@ -9,10 +9,16 @@ public interface FundPermissionService
     void assertGroupMember(Long groupId, Long userId);
     void assertGroupLeader(Long groupId, Long userId);
     void assertCanAssignAllocation(FundAllocationPlan plan, Long userId);
+    boolean canAssignAllocation(FundAllocationPlan plan, Long userId);
     void assertCanOperateAllocation(FundAllocationPlan plan, Long userId);
+    boolean canOperateAllocation(FundAllocationPlan plan, Long userId);
+    void assertCanFinishAllocation(FundAllocationPlan plan, Long userId);
+    boolean canFinishAllocation(FundAllocationPlan plan, Long userId);
     void assertCanOperateUse(FundUsePlan plan, Long userId);
+    boolean canOperateUse(FundUsePlan plan, Long userId);
     boolean canConfirmForceFinish(Long groupId, Long userId);
     void assertOwnRecord(Long submitUserId, Long userId);
+    boolean canEditRecord(Long submitUserId, Long userId);
     void assertCanAccessBusiness(Long groupId, String businessType, Long userId);
     void assertCanDownloadAttachment(Long groupId, String businessType, Long userId);
 }
