@@ -76,7 +76,23 @@ public class ResearchRemoteQueryServiceImpl implements ResearchRemoteQueryServic
         {
             throw new ServiceException("Research group does not exist");
         }
-        return toMemberDtos(memberMapper.selectActiveByGroupAndDept(groupId, deptId));
+        if (deptId != null)
+        {
+            return toMemberDtos(memberMapper.selectActiveByGroupAndDept(groupId, deptId));
+        }
+        List<ResearchGroupMember> activeMembers = new ArrayList<>();
+        List<ResearchGroupMember> members = memberMapper.selectByGroupId(groupId);
+        if (members != null)
+        {
+            for (ResearchGroupMember member : members)
+            {
+                if ("0".equals(member.getStatus()))
+                {
+                    activeMembers.add(member);
+                }
+            }
+        }
+        return toMemberDtos(activeMembers);
     }
 
     private List<ResearchGroupUnitDto> toUnitDtos(List<ResearchGroupUnit> units)
