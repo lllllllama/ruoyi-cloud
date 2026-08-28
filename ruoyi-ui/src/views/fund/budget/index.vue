@@ -11,18 +11,20 @@
     <el-table v-loading="loading" :data="groups">
       <el-table-column label="课题编码" prop="groupCode" min-width="140" />
       <el-table-column label="课题名称" prop="groupName" min-width="220" />
-      <el-table-column label="负责单位ID" prop="leadDeptId" width="120" />
+      <el-table-column label="负责单位" min-width="140"><template slot-scope="scope">{{ deptName(scope.row.leadDeptId) }}</template></el-table-column>
       <el-table-column label="项目总资金（元）" min-width="150">
         <template slot-scope="scope">{{ money(budgetOf(scope.row.groupId).totalAmount) }}</template>
       </el-table-column>
       <el-table-column label="操作" width="220">
         <template slot-scope="scope">
-          <el-button type="text" @click="showOverview(scope.row)">查看统计</el-button>
-          <el-button
-            type="text"
-            @click="openBudgetDialog(scope.row)"
-            v-hasPermi="['fund:budget:add','fund:budget:edit']"
-          >{{ budgetOf(scope.row.groupId).budgetId ? '编辑总资金' : '设置总资金' }}</el-button>
+          <div class="business-table-actions">
+            <el-button type="text" @click="showOverview(scope.row)">查看统计</el-button>
+            <el-button
+              type="text"
+              @click="openBudgetDialog(scope.row)"
+              v-hasPermi="['fund:budget:add','fund:budget:edit']"
+            >{{ budgetOf(scope.row.groupId).budgetId ? '编辑总资金' : '设置总资金' }}</el-button>
+          </div>
         </template>
       </el-table-column>
     </el-table>
@@ -60,6 +62,7 @@
 <script>
 import { groupOptions } from '@/api/research/group'
 import { listBudget, addBudget, updateBudget, getAllocationOverview, getUseOverview } from '@/api/fund/budget'
+import { listFundDepts } from '@/api/fund/org'
 
 export default {
   name: 'FundBudget',
@@ -67,6 +70,7 @@ export default {
     return {
       loading: false,
       groups: [],
+      depts: [],
       budgets: [],
       budgetOpen: false,
       overviewOpen: false,
@@ -94,12 +98,17 @@ export default {
     budgetOf(groupId) {
       return this.budgets.find(item => item.topicId === groupId) || {}
     },
+    deptName(deptId) {
+      const dept = this.depts.find(item => item.deptId === deptId)
+      return dept ? dept.deptName : '—'
+    },
     load() {
       this.loading = true
-      Promise.all([groupOptions(), listBudget({ pageNum: 1, pageSize: 1000 })])
-        .then(([groupResult, budgetResult]) => {
+      Promise.all([groupOptions(), listBudget({ pageNum: 1, pageSize: 1000 }), listFundDepts()])
+        .then(([groupResult, budgetResult, deptResult]) => {
           this.groups = groupResult.data || []
           this.budgets = budgetResult.rows || []
+          this.depts = deptResult.data || []
           this.loading = false
         })
         .catch(() => { this.loading = false })

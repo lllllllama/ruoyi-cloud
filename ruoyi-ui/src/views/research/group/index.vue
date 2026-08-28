@@ -41,9 +41,11 @@
       <el-table-column label="排序" prop="sort" width="70" align="center" />
       <el-table-column label="操作" width="220" fixed="right">
         <template slot-scope="scope">
-          <el-button v-hasPermi="['research:group:edit']" size="mini" type="text" icon="el-icon-edit" @click="openGroup(scope.row)">编辑</el-button>
-          <el-button v-hasPermi="['research:group:edit']" size="mini" type="text" icon="el-icon-user" @click="openMembers(scope.row)">成员</el-button>
-          <el-button v-hasPermi="['research:group:edit']" size="mini" type="text" icon="el-icon-delete" @click="removeGroup(scope.row)">删除</el-button>
+          <div class="business-table-actions">
+            <el-button v-hasPermi="['research:group:edit']" size="mini" type="text" icon="el-icon-edit" @click="openGroup(scope.row)">编辑</el-button>
+            <el-button v-hasPermi="['research:group:edit']" size="mini" type="text" icon="el-icon-user" @click="openMembers(scope.row)">成员</el-button>
+            <el-button v-hasPermi="['research:group:edit']" size="mini" type="text" icon="el-icon-delete" @click="removeGroup(scope.row)">删除</el-button>
+          </div>
         </template>
       </el-table-column>
     </el-table>
@@ -89,7 +91,7 @@
           <el-table-column label="所属单位" min-width="150"><template slot-scope="scope">{{ deptName(scope.row.deptId) }}</template></el-table-column>
           <el-table-column label="角色" width="100"><template slot-scope="scope">{{ roleName(scope.row.memberRole) }}</template></el-table-column>
           <el-table-column label="状态" width="80"><template slot-scope="scope">{{ scope.row.status === '0' ? '正常' : '停用' }}</template></el-table-column>
-          <el-table-column label="操作" width="120"><template slot-scope="scope"><el-button type="text" @click="openMemberForm(scope.row)">编辑</el-button><el-button type="text" @click="removeMember(scope.row)">删除</el-button></template></el-table-column>
+          <el-table-column label="操作" width="120"><template slot-scope="scope"><div class="business-table-actions"><el-button type="text" @click="openMemberForm(scope.row)">编辑</el-button><el-button type="text" @click="removeMember(scope.row)">删除</el-button></div></template></el-table-column>
         </el-table>
       </div>
     </el-drawer>

@@ -11,10 +11,10 @@
       <el-table-column label="任务" prop="taskName" min-width="160" show-overflow-tooltip />
       <el-table-column label="交付成果" prop="deliverableName" min-width="160" show-overflow-tooltip />
       <el-table-column label="提交名称" prop="submissionName" min-width="180" show-overflow-tooltip />
-      <el-table-column label="提交时间" prop="submitTime" width="160" />
+      <el-table-column label="提交时间" width="170"><template slot-scope="scope">{{ formatDateTime(scope.row.submitTime) }}</template></el-table-column>
       <el-table-column label="操作" width="230" fixed="right">
         <template slot-scope="scope">
-          <div class="audit-actions">
+          <div class="business-table-actions">
             <el-button type="text" icon="el-icon-view" @click="view(scope.row)">查看</el-button>
             <el-button v-hasPermi="['task:submission:audit']" type="text" icon="el-icon-check" @click="audit(scope.row, true)">通过</el-button>
             <el-button v-hasPermi="['task:submission:audit']" type="text" icon="el-icon-close" @click="audit(scope.row, false)">退回</el-button>
@@ -27,11 +27,11 @@
     <el-dialog title="成果资料" :visible.sync="detailOpen" width="720px" append-to-body>
       <el-descriptions v-if="detail.submissionId" :column="2" border>
         <el-descriptions-item label="课题">{{ detail.groupName }}</el-descriptions-item><el-descriptions-item label="任务">{{ detail.taskName }}</el-descriptions-item>
-        <el-descriptions-item label="交付成果">{{ detail.deliverableName }}</el-descriptions-item><el-descriptions-item label="提交时间">{{ detail.submitTime }}</el-descriptions-item>
+        <el-descriptions-item label="交付成果">{{ detail.deliverableName }}</el-descriptions-item><el-descriptions-item label="提交时间">{{ formatDateTime(detail.submitTime) }}</el-descriptions-item>
         <el-descriptions-item label="提交名称" :span="2">{{ detail.submissionName }}</el-descriptions-item><el-descriptions-item label="成果说明" :span="2">{{ detail.submissionDesc || '—' }}</el-descriptions-item>
       </el-descriptions>
       <h4>附件</h4><div v-if="attachments.length"><el-button v-for="file in attachments" :key="file.attachmentId" type="text" icon="el-icon-download" @click="download(file)">{{ file.originalName }}</el-button></div><el-empty v-else :image-size="50" description="无附件" />
-      <h4>审核记录</h4><el-timeline v-if="audits.length"><el-timeline-item v-for="item in audits" :key="item.auditId" :timestamp="item.auditTime" placement="top">{{ actionName(item.action) }}<span v-if="item.auditOpinion">：{{ item.auditOpinion }}</span></el-timeline-item></el-timeline><el-empty v-else :image-size="50" description="暂无审核记录" />
+      <h4>审核记录</h4><el-timeline v-if="audits.length"><el-timeline-item v-for="item in audits" :key="item.auditId" :timestamp="formatDateTime(item.auditTime)" placement="top">{{ actionName(item.action) }}<span v-if="item.auditOpinion">：{{ item.auditOpinion }}</span></el-timeline-item></el-timeline><el-empty v-else :image-size="50" description="暂无审核记录" />
     </el-dialog>
   </div>
 </template>
@@ -47,6 +47,7 @@ export default {
   methods: {
     load() { this.loading = true; listSubmissions(this.query).then(res => { this.rows = res.rows || []; this.total = res.total || 0 }).finally(() => { this.loading = false }) },
     search() { this.query.pageNum = 1; this.load() },
+    formatDateTime(value) { return value ? this.parseTime(value) : '—' },
     view(row) { Promise.all([getSubmission(row.submissionId), listSubmissionAttachments(row.submissionId), listSubmissionAudits(row.submissionId)]).then(([detail, files, audits]) => { this.detail = detail.data || {}; this.attachments = files.data || []; this.audits = audits.data || []; this.detailOpen = true }) },
     audit(row, approve) {
       const title = approve ? '审核通过' : '退回修改'
@@ -59,16 +60,3 @@ export default {
   }
 }
 </script>
-
-<style scoped>
-.audit-actions {
-  display: flex;
-  align-items: center;
-  flex-wrap: nowrap;
-  white-space: nowrap;
-}
-
-.audit-actions .el-button {
-  flex: none;
-}
-</style>

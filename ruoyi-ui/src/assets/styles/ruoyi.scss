@@ -271,3 +271,15 @@
 	position: relative;
 	float: right;
 }
+
+/* 业务表格的操作按钮始终保持单行，避免固定列与主表行高不一致。 */
+.business-table-actions {
+	display: flex;
+	align-items: center;
+	flex-wrap: nowrap;
+	white-space: nowrap;
+}
+
+.business-table-actions > .el-button {
+	flex: none;
+}

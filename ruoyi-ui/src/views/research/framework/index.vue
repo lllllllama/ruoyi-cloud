@@ -19,7 +19,7 @@
       <el-table-column label="牵头单位" prop="leadDeptName" min-width="150"><template slot-scope="scope">{{ scope.row.leadDeptName || deptName(scope.row.leadDeptId) }}</template></el-table-column>
       <el-table-column label="协同单位" min-width="220" show-overflow-tooltip><template slot-scope="scope">{{ unitNames(scope.row.units) || '—' }}</template></el-table-column>
       <el-table-column label="状态" width="80" align="center"><template slot-scope="scope"><el-tag :type="scope.row.status === '0' ? 'success' : 'info'">{{ scope.row.status === '0' ? '正常' : '停用' }}</el-tag></template></el-table-column>
-      <el-table-column label="操作" width="150" fixed="right"><template slot-scope="scope"><el-button v-hasPermi="['task:framework:add']" type="text" icon="el-icon-edit" @click="openForm(scope.row)">编辑</el-button><el-button v-hasPermi="['task:framework:add']" type="text" icon="el-icon-delete" @click="remove(scope.row)">删除</el-button></template></el-table-column>
+      <el-table-column label="操作" width="150" fixed="right"><template slot-scope="scope"><div class="business-table-actions"><el-button v-hasPermi="['task:framework:add']" type="text" icon="el-icon-edit" @click="openForm(scope.row)">编辑</el-button><el-button v-hasPermi="['task:framework:add']" type="text" icon="el-icon-delete" @click="remove(scope.row)">删除</el-button></div></template></el-table-column>
     </el-table>
     <pagination v-show="total > 0" :total="total" :page.sync="query.pageNum" :limit.sync="query.pageSize" @pagination="load" />
 

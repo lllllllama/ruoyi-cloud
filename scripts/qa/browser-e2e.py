@@ -210,29 +210,111 @@ def check_admin_pages(page: Page, qa: QaRun, base_url: str, prefix: str) -> None
         visible = page.get_by_text(marker, exact=False).first.is_visible()
         qa.check(f"{prefix}-PAGE-{path}", visible, marker)
         if path == "/research/audit":
-            check_audit_action_layout(page, qa, prefix)
+            check_fixed_action_layout(
+                page,
+                qa,
+                prefix,
+                "AUDIT",
+                ["查看", "通过", "退回"],
+                {
+                    "submissionId": -1,
+                    "groupName": "布局回归课题",
+                    "taskName": "布局回归任务",
+                    "deliverableName": "布局回归成果",
+                    "submissionName": "布局回归提交",
+                    "submitTime": "2026-08-28T00:00:00.000+08:00",
+                },
+            )
+        if path == "/research/archive":
+            check_fixed_action_layout(
+                page,
+                qa,
+                prefix,
+                "ARCHIVE",
+                ["资料", "取消审核"],
+                {
+                    "submissionId": -1,
+                    "groupName": "布局回归课题",
+                    "taskName": "布局回归任务",
+                    "deliverableName": "布局回归成果",
+                    "submissionName": "布局回归提交",
+                    "submitUserName": "提交人",
+                    "archiveUserName": "归档人",
+                    "archiveTime": "2026-08-28T00:00:00.000+08:00",
+                },
+            )
+        check_business_table_layout(page, qa, prefix, path)
 
 
-def check_audit_action_layout(page: Page, qa: QaRun, prefix: str) -> None:
+def check_business_table_layout(page: Page, qa: QaRun, prefix: str, path: str) -> None:
+    result = page.evaluate("""
+        () => {
+          const table = document.querySelector('.app-container > .el-table')
+          if (!table) return { tableFound: false, actionRows: [], rawIsoDateTimes: [] }
+          const fixedBody = table.querySelector('.el-table__fixed-right .el-table__fixed-body-wrapper')
+          const body = fixedBody || table.querySelector(':scope > .el-table__body-wrapper')
+          const rows = body ? Array.from(body.querySelectorAll('tbody > tr')).filter(row => {
+            const box = row.getBoundingClientRect()
+            return box.height > 0 && box.width > 0
+          }) : []
+          const actionRows = rows.map(row => {
+            const rowBox = row.getBoundingClientRect()
+            const buttons = Array.from(row.querySelectorAll('button')).filter(button => {
+              const style = window.getComputedStyle(button)
+              const box = button.getBoundingClientRect()
+              return style.visibility !== 'hidden' && style.display !== 'none' && box.height > 0
+            })
+            const boxes = buttons.map(button => button.getBoundingClientRect())
+            const centers = boxes.map(box => box.top + box.height / 2)
+            return {
+              labels: buttons.map(button => button.innerText.trim()),
+              singleLine: centers.length < 2 || Math.max(...centers) - Math.min(...centers) <= 2,
+              contained: boxes.every(box => box.top >= rowBox.top - 1 && box.bottom <= rowBox.bottom + 1)
+            }
+          }).filter(row => row.labels.length > 0)
+          return {
+            tableFound: true,
+            actionRows,
+            rawIsoDateTimes: (table.innerText.match(/\\d{4}-\\d{2}-\\d{2}T\\d{2}:\\d{2}:\\d{2}(?:\\.\\d+)?(?:Z|[+-]\\d{2}:\\d{2})?/g) || [])
+          }
+        }
+    """)
+    safe_name = path.strip('/').replace('/', '-').upper()
+    layout_valid = result["tableFound"] and all(
+        row["singleLine"] and row["contained"] for row in result["actionRows"]
+    )
+    qa.check(
+        f"{prefix}-{safe_name}-TABLE-ACTIONS-LAYOUT",
+        layout_valid,
+        json.dumps(result["actionRows"], ensure_ascii=False),
+    )
+    qa.check(
+        f"{prefix}-{safe_name}-NO-RAW-ISO-DATETIME",
+        not result["rawIsoDateTimes"],
+        json.dumps(result["rawIsoDateTimes"], ensure_ascii=False),
+    )
+
+
+def check_fixed_action_layout(
+    page: Page,
+    qa: QaRun,
+    prefix: str,
+    page_name: str,
+    expected_labels: list,
+    fixture_row: dict,
+) -> None:
     fixture_injected = False
     if page.locator(".el-table__fixed-right .el-table__fixed-body-wrapper tbody tr").count() == 0:
         fixture_injected = page.evaluate("""
-            () => {
+            row => {
               const root = document.querySelector('.app-container')
               const view = root && root.__vue__
               if (!view) return false
-              view.rows = [{
-                submissionId: -1,
-                groupName: '布局回归课题',
-                taskName: '布局回归任务',
-                deliverableName: '布局回归成果',
-                submissionName: '布局回归提交',
-                submitTime: '2026-08-28 00:00:00'
-              }]
+              view.rows = [row]
               view.total = 1
               return true
             }
-        """)
+        """, fixture_row)
         if fixture_injected:
             page.locator(".el-table__fixed-right .el-table__fixed-body-wrapper tbody tr").wait_for(
                 state="visible", timeout=5_000
@@ -265,10 +347,13 @@ def check_audit_action_layout(page: Page, qa: QaRun, prefix: str) -> None:
     """)
     result["fixtureInjected"] = fixture_injected
     valid = result["rowCount"] > 0 and all(
-        row["buttonCount"] == 3 and row["singleLine"] and row["contained"]
+        row["buttonCount"] == len(expected_labels)
+        and row["labels"] == expected_labels
+        and row["singleLine"]
+        and row["contained"]
         for row in result["rows"]
     )
-    qa.check(f"{prefix}-AUDIT-ACTIONS-VISIBLE-SINGLE-LINE", valid, json.dumps(result, ensure_ascii=False))
+    qa.check(f"{prefix}-{page_name}-ACTIONS-VISIBLE-SINGLE-LINE", valid, json.dumps(result, ensure_ascii=False))
 
 
 def check_role_navigation(browser, qa: QaRun, base_url: str, browser_name: str) -> None:

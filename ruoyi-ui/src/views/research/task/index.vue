@@ -17,12 +17,14 @@
       <el-table-column label="起止时间" min-width="210"><template slot-scope="scope">{{ scope.row.startDate || '—' }} 至 {{ scope.row.deadline || '—' }}</template></el-table-column>
       <el-table-column label="状态" width="90" align="center"><template slot-scope="scope"><el-tag :type="statusType(scope.row.status)">{{ statusName(scope.row.status) }}</el-tag></template></el-table-column>
       <el-table-column label="排序" prop="sort" width="70" align="center" />
-      <el-table-column label="操作" width="230" fixed="right">
+      <el-table-column label="操作" width="300" fixed="right">
         <template slot-scope="scope">
-          <el-button v-if="scope.row.level < 3" v-hasPermi="['task:info:add']" type="text" icon="el-icon-plus" @click="openTask(null, scope.row)">子任务</el-button>
-          <el-button v-hasPermi="['task:info:edit']" type="text" icon="el-icon-edit" @click="openTask(scope.row)">编辑</el-button>
-          <el-button v-hasPermi="['task:deliverable:add']" type="text" icon="el-icon-document" @click="openDeliverables(scope.row)">成果</el-button>
-          <el-button v-hasPermi="['task:info:remove']" type="text" icon="el-icon-delete" @click="removeTask(scope.row)">删除</el-button>
+          <div class="business-table-actions">
+            <el-button v-if="scope.row.level < 3" v-hasPermi="['task:info:add']" type="text" icon="el-icon-plus" @click="openTask(null, scope.row)">子任务</el-button>
+            <el-button v-hasPermi="['task:info:edit']" type="text" icon="el-icon-edit" @click="openTask(scope.row)">编辑</el-button>
+            <el-button v-hasPermi="['task:deliverable:add']" type="text" icon="el-icon-document" @click="openDeliverables(scope.row)">成果</el-button>
+            <el-button v-hasPermi="['task:info:remove']" type="text" icon="el-icon-delete" @click="removeTask(scope.row)">删除</el-button>
+          </div>
         </template>
       </el-table-column>
     </el-table>
@@ -57,7 +59,7 @@
           <el-table-column label="截止日期" prop="deadline" width="110" />
           <el-table-column label="必交" width="65" align="center"><template slot-scope="scope">{{ scope.row.isRequired === '1' ? '是' : '否' }}</template></el-table-column>
           <el-table-column label="状态" width="90"><template slot-scope="scope">{{ deliverableStatus(scope.row.status) }}</template></el-table-column>
-          <el-table-column label="操作" width="120"><template slot-scope="scope"><el-button type="text" @click="openDeliverableForm(scope.row)">编辑</el-button><el-button type="text" @click="removeDeliverable(scope.row)">删除</el-button></template></el-table-column>
+          <el-table-column label="操作" width="120"><template slot-scope="scope"><div class="business-table-actions"><el-button type="text" @click="openDeliverableForm(scope.row)">编辑</el-button><el-button type="text" @click="removeDeliverable(scope.row)">删除</el-button></div></template></el-table-column>
         </el-table>
       </div>
     </el-drawer>
