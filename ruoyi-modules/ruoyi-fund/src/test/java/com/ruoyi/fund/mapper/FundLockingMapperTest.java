@@ -15,6 +15,14 @@ public class FundLockingMapperTest
         assertForUpdate("mapper/fund/FundUsePlanMapper.xml", "selectForUpdate");
     }
 
+    @Test
+    public void budgetAndRecordQueriesUseForUpdate() throws Exception
+    {
+        assertForUpdate("mapper/fund/FundProjectBudgetMapper.xml", "selectByTopicIdForUpdate");
+        assertForUpdate("mapper/fund/FundAllocationRecordMapper.xml", "selectForUpdate");
+        assertForUpdate("mapper/fund/FundUseRecordMapper.xml", "selectForUpdate");
+    }
+
     private void assertForUpdate(String resource, String statement) throws Exception
     {
         InputStream input = Thread.currentThread().getContextClassLoader().getResourceAsStream(resource);

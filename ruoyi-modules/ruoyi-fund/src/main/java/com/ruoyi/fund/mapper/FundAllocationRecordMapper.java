@@ -4,6 +4,7 @@ import java.util.List;
 import com.ruoyi.fund.domain.FundAllocationRecord;
 public interface FundAllocationRecordMapper {
     FundAllocationRecord selectById(Long recordId);
+    FundAllocationRecord selectForUpdate(Long recordId);
     List<FundAllocationRecord> selectByPlanId(Long planId);
     BigDecimal sumByPlanId(Long planId);
     BigDecimal sumByTopicId(Long topicId);

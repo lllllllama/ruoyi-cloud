@@ -14,6 +14,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
+import org.mockito.InOrder;
 import org.mockito.junit.MockitoJUnitRunner;
 import com.ruoyi.common.core.context.SecurityContextHolder;
 import com.ruoyi.common.core.exception.ServiceException;
@@ -60,6 +61,9 @@ public class FundAllocationServiceImplTest
         budget.setTopicId(1L);
         budget.setTotalAmount(money("100"));
         when(budgetMapper.selectByTopicIdForUpdate(1L)).thenReturn(budget);
+        when(planMapper.selectById(10L)).thenReturn(runningPlan());
+        when(recordMapper.selectForUpdate(anyLong())).thenAnswer(invocation ->
+                recordMapper.selectById(invocation.getArgument(0)));
         when(researchService.isGroupUnit(eq(1L), anyLong())).thenReturn(true);
         FundDeptOption dept = new FundDeptOption();
         dept.setDeptName("测试单位");
@@ -129,6 +133,26 @@ public class FundAllocationServiceImplTest
         when(recordMapper.update(any(FundAllocationRecord.class))).thenReturn(1);
 
         assertEquals(1, service.updateRecord(allocationRecord(20L, "40")));
+    }
+
+    @Test
+    public void allocationRecordUpdateLocksBudgetThenPlanThenRecord()
+    {
+        FundAllocationPlan plan = runningPlan();
+        FundAllocationRecord stored = allocationRecord(20L, "40");
+        when(planMapper.selectById(10L)).thenReturn(plan);
+        when(planMapper.selectForUpdate(10L)).thenReturn(plan);
+        when(recordMapper.selectById(20L)).thenReturn(stored);
+        when(recordMapper.selectForUpdate(20L)).thenReturn(stored);
+        when(recordMapper.sumByTopicId(1L)).thenReturn(money("40"));
+        when(recordMapper.update(any(FundAllocationRecord.class))).thenReturn(1);
+
+        service.updateRecord(allocationRecord(20L, "40"));
+
+        InOrder locks = inOrder(budgetMapper, planMapper, recordMapper);
+        locks.verify(budgetMapper).selectByTopicIdForUpdate(1L);
+        locks.verify(planMapper).selectForUpdate(10L);
+        locks.verify(recordMapper).selectForUpdate(20L);
     }
 
     @Test
@@ -257,6 +281,9 @@ public class FundAllocationServiceImplTest
         when(planMapper.selectForUpdate(10L)).thenReturn(under);
         when(planMapper.selectForUpdate(11L)).thenReturn(exact);
         when(planMapper.selectForUpdate(12L)).thenReturn(over);
+        when(planMapper.selectById(10L)).thenReturn(under);
+        when(planMapper.selectById(11L)).thenReturn(exact);
+        when(planMapper.selectById(12L)).thenReturn(over);
         when(recordMapper.sumByTopicId(1L)).thenReturn(money("120"));
         when(recordMapper.sumByPlanId(10L)).thenReturn(money("80"));
         when(recordMapper.sumByPlanId(11L)).thenReturn(money("100"));
@@ -343,6 +370,11 @@ public class FundAllocationServiceImplTest
         FundAllocationPlan foreignPlan = runningPlan();
         foreignPlan.setPlanId(99L);
         foreignPlan.setTopicId(2L);
+        FundProjectBudget foreignBudget = new FundProjectBudget();
+        foreignBudget.setBudgetId(2L);
+        foreignBudget.setTopicId(2L);
+        foreignBudget.setTotalAmount(money("100"));
+        when(budgetMapper.selectByTopicIdForUpdate(2L)).thenReturn(foreignBudget);
         when(planMapper.selectById(99L)).thenReturn(foreignPlan);
         when(planMapper.selectForUpdate(99L)).thenReturn(foreignPlan);
         doThrow(new ServiceException("无课题访问权限"))

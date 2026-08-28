@@ -132,13 +132,13 @@ function Invoke-ConcurrentQaRequests([object[]]$Requests) {
     }
 }
 
-Write-Output '[1/8] Login through Gateway'
+Write-Output '[1/9] Login through Gateway'
 $adminToken = Get-QaToken -BaseUrl $BaseUrl -Username 'admin'
 $leaderAToken = Get-QaToken -BaseUrl $BaseUrl -Username 'a_leader'
 $leaderBToken = Get-QaToken -BaseUrl $BaseUrl -Username 'b_leader'
 $coreBToken = Get-QaToken -BaseUrl $BaseUrl -Username 'b_core'
 
-Write-Output '[2/8] Create exact DECIMAL budgets'
+Write-Output '[2/9] Create exact DECIMAL budgets'
 $invalidBudget = Invoke-QaRawRequest -BaseUrl $BaseUrl -Method Post -Path '/ruoyi-fund/budget' -Token $adminToken -Body @{
     topicId = $groupA; totalAmount = [decimal]'100.001'; planEndTime = '2026-12-31 23:59:59'; fundDesc = 'must reject scale 3'
 }
@@ -159,7 +159,7 @@ Add-QaCase 'DB-BUDGET-B-1000000.01' (Test-QaSuccessResponse $budgetB) $budgetB.R
 $storedBudgets = Get-DbScalar 'ry-fund' "SELECT GROUP_CONCAT(CAST(total_amount AS CHAR) ORDER BY topic_id SEPARATOR ',') FROM fund_project_budget WHERE topic_id IN ($groupA,$groupB)"
 Add-QaCase 'DB-DECIMAL-STORAGE' ($storedBudgets -eq '100.00,1000000.01') $storedBudgets
 
-Write-Output '[3/8] Allocation boundary matrix'
+Write-Output '[3/9] Allocation boundary matrix'
 $allocationScenarios = @(
     @{ Name = 'A-0+100'; First = $null; Second = [decimal]'100.00'; SecondExpected = $true },
     @{ Name = 'A-60+40'; First = [decimal]'60.00'; Second = [decimal]'40.00'; SecondExpected = $true },
@@ -182,7 +182,7 @@ foreach ($scenario in $allocationScenarios) {
     foreach ($id in $created) { Remove-AllocationPlan $id }
 }
 
-Write-Output '[4/8] Use-plan boundary matrix'
+Write-Output '[4/9] Use-plan boundary matrix'
 $useScenarios = @(
     @{ Name = 'U-0+100'; First = $null; Second = [decimal]'100.00'; SecondExpected = $true },
     @{ Name = 'U-60+40'; First = [decimal]'60.00'; Second = [decimal]'40.00'; SecondExpected = $true },
@@ -205,7 +205,7 @@ foreach ($scenario in $useScenarios) {
     foreach ($id in $created) { Remove-UsePlan $id }
 }
 
-Write-Output '[5/8] Invalid amount rejection and precision'
+Write-Output '[5/9] Invalid amount rejection and precision'
 $invalidAmounts = @(
     @{ Label = 'NULL'; Value = $null },
     @{ Label = 'ZERO'; Value = [decimal]'0' },
@@ -273,7 +273,7 @@ $precisionStored = if ($null -ne $precisionPlan) { Get-DbScalar 'ry-fund' "SELEC
 Add-QaCase 'ALLOC-PRECISION-0.10' ($precisionStored -eq '0.10') $precisionStored
 if ($null -ne $precisionPlan) { Remove-AllocationPlan $precisionPlan.planId }
 
-Write-Output '[6/8] Concurrent 60 + 60 plan creation'
+Write-Output '[6/9] Concurrent 60 + 60 plan creation'
 $concurrentAllocation = Invoke-ConcurrentQaRequests @(
     @{ Method = 'POST'; Path = '/ruoyi-fund/allocation/plan'; Token = $adminToken; Body = @{ topicId=$groupA; allocationName="concurrent-a1-$stamp"; allocationDeptId=103; receiveDeptId=104; planAmount=60.00; planTime='2026-08-28 12:00:00' } },
     @{ Method = 'POST'; Path = '/ruoyi-fund/allocation/plan'; Token = $adminToken; Body = @{ topicId=$groupA; allocationName="concurrent-a2-$stamp"; allocationDeptId=103; receiveDeptId=104; planAmount=60.00; planTime='2026-08-28 12:00:00' } }
@@ -296,7 +296,83 @@ $useSum = ($useConcurrentPlans | Measure-Object -Property planAmount -Sum).Sum
 Add-QaCase 'CON-USE-60+60' ($useSuccesses -eq 1 -and [decimal]$useSum -eq 60.00) "success=$useSuccesses,sum=$useSum"
 foreach ($plan in $useConcurrentPlans) { Remove-UsePlan $plan.usePlanId }
 
-Write-Output '[7/8] Record-versus-finish races'
+Write-Output '[7/9] Concurrent project-level actual amount limits'
+$storedBudgetA = (Assert-QaSuccess -Response (Invoke-QaRawRequest -BaseUrl $BaseUrl -Method Get `
+    -Path "/ruoyi-fund/budget/topic/$groupA" -Token $adminToken) -Label 'get budget A for concurrency').data
+Assert-QaSuccess -Response (Invoke-QaRawRequest -BaseUrl $BaseUrl -Method Put -Path '/ruoyi-fund/budget' `
+    -Token $adminToken -Body @{
+        budgetId = $storedBudgetA.budgetId
+        topicId = $groupA
+        totalAmount = [decimal]'1000.00'
+        planEndTime = '2026-12-31 23:59:59'
+        fundDesc = 'QA project-level concurrency budget'
+    }) -Label 'raise budget A to 1000' | Out-Null
+
+$actualAllocationPlanNames = @("actual-allocation-a-$stamp", "actual-allocation-b-$stamp")
+foreach ($name in $actualAllocationPlanNames) {
+    Assert-QaSuccess -Response (Add-AllocationPlan -Amount 500.00 -Name $name -ResponsibleUserId 9101) `
+        -Label "create $name" | Out-Null
+}
+$actualAllocationPlanA = Get-AllocationPlan $actualAllocationPlanNames[0]
+$actualAllocationPlanB = Get-AllocationPlan $actualAllocationPlanNames[1]
+$concurrentAllocationRecords = Invoke-ConcurrentQaRequests @(
+    @{ Method='POST'; Path='/ruoyi-fund/allocation/record'; Token=$adminToken; Body=@{ planId=$actualAllocationPlanA.planId; allocationName="project-limit-a-$stamp"; amount=800.00; allocationTime='2026-08-28 12:10:00' } },
+    @{ Method='POST'; Path='/ruoyi-fund/allocation/record'; Token=$adminToken; Body=@{ planId=$actualAllocationPlanB.planId; allocationName="project-limit-b-$stamp"; amount=800.00; allocationTime='2026-08-28 12:10:00' } }
+)
+$actualAllocationSuccesses = @($concurrentAllocationRecords | Where-Object { Test-QaSuccessResponse $_ }).Count
+$actualAllocationTotal = Get-DbScalar 'ry-fund' "SELECT COALESCE(SUM(r.amount),0) FROM fund_allocation_record r JOIN fund_allocation_plan p ON p.plan_id=r.plan_id AND p.del_flag='0' WHERE p.topic_id=$groupA AND r.del_flag='0'"
+Add-QaCase 'CON-ACTUAL-ALLOC-800+800-LIMIT-1000' ($actualAllocationSuccesses -eq 1 -and [decimal]$actualAllocationTotal -eq 800.00) "success=$actualAllocationSuccesses,total=$actualAllocationTotal"
+
+foreach ($plan in @($actualAllocationPlanA, $actualAllocationPlanB)) {
+    $records = (Assert-QaSuccess -Response (Invoke-QaRawRequest -BaseUrl $BaseUrl -Method Get `
+        -Path "/ruoyi-fund/allocation/plan/$($plan.planId)/records" -Token $adminToken) -Label 'list allocation concurrency records').data
+    foreach ($record in @($records)) {
+        Assert-QaSuccess -Response (Invoke-QaRawRequest -BaseUrl $BaseUrl -Method Delete `
+            -Path "/ruoyi-fund/allocation/record/$($record.recordId)" -Token $adminToken) -Label 'cleanup allocation concurrency record' | Out-Null
+    }
+    Remove-AllocationPlan $plan.planId
+}
+
+$actualFundingPlanName = "actual-funding-1000-$stamp"
+Assert-QaSuccess -Response (Add-AllocationPlan -Amount 1000.00 -Name $actualFundingPlanName -ResponsibleUserId 9101) `
+    -Label 'create actual funding plan' | Out-Null
+$actualFundingPlan = Get-AllocationPlan $actualFundingPlanName
+Assert-QaSuccess -Response (Invoke-QaRawRequest -BaseUrl $BaseUrl -Method Post -Path '/ruoyi-fund/allocation/record' `
+    -Token $adminToken -Body @{ planId=$actualFundingPlan.planId; allocationName="actual-funding-$stamp"; amount=1000.00; allocationTime='2026-08-28 12:15:00' }) `
+    -Label 'create actual allocation 1000' | Out-Null
+
+$actualUsePlanNames = @("actual-use-a-$stamp", "actual-use-b-$stamp")
+foreach ($name in $actualUsePlanNames) {
+    Assert-QaSuccess -Response (Add-UsePlan -Amount 500.00 -Name $name) -Label "create $name" | Out-Null
+}
+$actualUsePlanA = Get-UsePlan $actualUsePlanNames[0]
+$actualUsePlanB = Get-UsePlan $actualUsePlanNames[1]
+$concurrentUseRecords = Invoke-ConcurrentQaRequests @(
+    @{ Method='POST'; Path='/ruoyi-fund/use/record'; Token=$adminToken; Body=@{ usePlanId=$actualUsePlanA.usePlanId; useName="project-use-limit-a-$stamp"; amount=800.00; useTime='2026-08-28 12:20:00' } },
+    @{ Method='POST'; Path='/ruoyi-fund/use/record'; Token=$adminToken; Body=@{ usePlanId=$actualUsePlanB.usePlanId; useName="project-use-limit-b-$stamp"; amount=800.00; useTime='2026-08-28 12:20:00' } }
+)
+$actualUseSuccesses = @($concurrentUseRecords | Where-Object { Test-QaSuccessResponse $_ }).Count
+$actualUseTotal = Get-DbScalar 'ry-fund' "SELECT COALESCE(SUM(r.amount),0) FROM fund_use_record r JOIN fund_use_plan p ON p.use_plan_id=r.use_plan_id AND p.del_flag='0' WHERE p.topic_id=$groupA AND r.del_flag='0'"
+Add-QaCase 'CON-ACTUAL-USE-800+800-LIMIT-1000' ($actualUseSuccesses -eq 1 -and [decimal]$actualUseTotal -eq 800.00) "success=$actualUseSuccesses,total=$actualUseTotal"
+
+foreach ($plan in @($actualUsePlanA, $actualUsePlanB)) {
+    $records = (Assert-QaSuccess -Response (Invoke-QaRawRequest -BaseUrl $BaseUrl -Method Get `
+        -Path "/ruoyi-fund/use/plan/$($plan.usePlanId)/records" -Token $adminToken) -Label 'list use concurrency records').data
+    foreach ($record in @($records)) {
+        Assert-QaSuccess -Response (Invoke-QaRawRequest -BaseUrl $BaseUrl -Method Delete `
+            -Path "/ruoyi-fund/use/record/$($record.useRecordId)" -Token $adminToken) -Label 'cleanup use concurrency record' | Out-Null
+    }
+    Remove-UsePlan $plan.usePlanId $adminToken
+}
+$fundingRecords = (Assert-QaSuccess -Response (Invoke-QaRawRequest -BaseUrl $BaseUrl -Method Get `
+    -Path "/ruoyi-fund/allocation/plan/$($actualFundingPlan.planId)/records" -Token $adminToken) -Label 'list actual funding records').data
+foreach ($record in @($fundingRecords)) {
+    Assert-QaSuccess -Response (Invoke-QaRawRequest -BaseUrl $BaseUrl -Method Delete `
+        -Path "/ruoyi-fund/allocation/record/$($record.recordId)" -Token $adminToken) -Label 'cleanup actual funding record' | Out-Null
+}
+Remove-AllocationPlan $actualFundingPlan.planId
+
+Write-Output '[8/9] Record-versus-finish races'
 $raceAllocationName = "race-allocation-$stamp"
 Assert-QaSuccess -Response (Add-AllocationPlan -Amount 100.00 -Name $raceAllocationName -GroupId $groupB -AllocationDeptId 105 -ReceiveDeptId 105 -ResponsibleUserId 9105) -Label 'create allocation race plan' | Out-Null
 $raceAllocationId = (Get-AllocationPlan $raceAllocationName $groupB).planId
@@ -339,7 +415,7 @@ $raceUseSum = Get-DbScalar 'ry-fund' "SELECT COALESCE(SUM(amount),0) FROM fund_u
 $postFinishUse = Invoke-QaRawRequest -BaseUrl $BaseUrl -Method Post -Path '/ruoyi-fund/use/record' -Token $coreBToken -Body @{ usePlanId=$raceUseId; useName='must fail after close'; amount=1.00; useTime='2026-08-28 12:31:00' }
 Add-QaCase 'CON-USE-20-THREAD-RECORD-VS-FINISH' ($raceUseFinishSuccess -and $raceUseAfter.status -eq '1' -and [decimal]$raceUseAfter.actualAmount -eq [decimal]$raceUseSum -and [decimal]$raceUseSum -eq [decimal]$raceUseRecordSuccesses -and -not (Test-QaSuccessResponse $postFinishUse)) "status=$($raceUseAfter.status),recordSuccess=$raceUseRecordSuccesses,actual=$($raceUseAfter.actualAmount),sum=$raceUseSum"
 
-Write-Output '[8/8] Double finish and single audit log'
+Write-Output '[9/9] Double finish and single audit log'
 $doubleName = "double-finish-allocation-$stamp"
 Assert-QaSuccess -Response (Add-AllocationPlan -Amount 100.00 -Name $doubleName -GroupId $groupB -AllocationDeptId 105 -ReceiveDeptId 105 -ResponsibleUserId 9105) -Label 'create double finish allocation' | Out-Null
 $doubleId = (Get-AllocationPlan $doubleName $groupB).planId
