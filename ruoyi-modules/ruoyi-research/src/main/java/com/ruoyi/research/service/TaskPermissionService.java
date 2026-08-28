@@ -17,6 +17,10 @@ public interface TaskPermissionService
 
     void assertCanSubmitDeliverable(Long deliverableId, Long userId);
 
+    boolean canBeDeliverableAssignee(Long groupId, Long userId);
+
+    void assertCanBeDeliverableAssignee(Long groupId, Long userId);
+
     void assertSubmissionOwner(TaskSubmission submission, Long userId);
 
     void assertCanAuditSubmission(TaskSubmission submission, Long userId);

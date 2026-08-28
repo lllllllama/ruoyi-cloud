@@ -227,10 +227,11 @@ $validateComplete = Invoke-Api Get "/task/framework/$($frameworkA.frameworkId)/v
 Add-QaCase 'TREE-VALID-WITH-LEAF-DELIVERABLE' (Test-QaSuccessResponse $validateComplete) $validateComplete.Raw
 
 $unassignedMatrix = @(
-    @{ Name = 'LEADER'; Token = $leaderAToken; Expected = $true },
+    @{ Name = 'ADMIN'; Token = $adminToken; Expected = $false },
+    @{ Name = 'LEADER'; Token = $leaderAToken; Expected = $false },
     @{ Name = 'CORE'; Token = $coreAToken; Expected = $true },
-    @{ Name = 'MEMBER'; Token = $memberAToken; Expected = $false },
-    @{ Name = 'EXPERT'; Token = $expertAToken; Expected = $false }
+    @{ Name = 'MEMBER'; Token = $memberAToken; Expected = $true },
+    @{ Name = 'EXPERT'; Token = $expertAToken; Expected = $true }
 )
 foreach ($entry in $unassignedMatrix) {
     $response = Invoke-Api Get "/deliverable/$($deliverable.deliverableId)/can-submit" $entry.Token
@@ -242,10 +243,13 @@ $coreAssign = Invoke-Api Put "/deliverable/$($deliverable.deliverableId)/assigne
 Add-QaCase 'ASSIGN-CORE-DENIED' (Test-Rejected $coreAssign) $coreAssign.Raw
 $outsiderAssign = Invoke-Api Put "/deliverable/$($deliverable.deliverableId)/assignees" $leaderAToken @{ userIds = @(9107) }
 Add-QaCase 'ASSIGN-OUTSIDER-DENIED' (Test-Rejected $outsiderAssign) $outsiderAssign.Raw
+$leaderAssign = Invoke-Api Put "/deliverable/$($deliverable.deliverableId)/assignees" $leaderAToken @{ userIds = @(9101) }
+Add-QaCase 'ASSIGN-LEADER-DENIED' (Test-Rejected $leaderAssign) $leaderAssign.Raw
 $memberAssign = Invoke-Api Put "/deliverable/$($deliverable.deliverableId)/assignees" $leaderAToken @{ userIds = @(9103) }
 Add-QaCase 'ASSIGN-MEMBER-SUCCESS' (Test-QaSuccessResponse $memberAssign) $memberAssign.Raw
 
 $assignedMatrix = @(
+    @{ Name = 'ADMIN'; Token = $adminToken; Expected = $false },
     @{ Name = 'LEADER'; Token = $leaderAToken; Expected = $false },
     @{ Name = 'CORE'; Token = $coreAToken; Expected = $false },
     @{ Name = 'MEMBER'; Token = $memberAToken; Expected = $true },

@@ -10,6 +10,7 @@ import org.springframework.stereotype.Service;
 import com.ruoyi.research.domain.vo.MyTaskVo;
 import com.ruoyi.research.mapper.TaskMyMapper;
 import com.ruoyi.research.service.TaskMyService;
+import com.ruoyi.research.service.TaskPermissionService;
 
 @Service
 public class TaskMyServiceImpl implements TaskMyService
@@ -19,13 +20,16 @@ public class TaskMyServiceImpl implements TaskMyService
     @Autowired
     private TaskMyMapper taskMyMapper;
 
+    @Autowired
+    private TaskPermissionService taskPermissionService;
+
     @Override
     public List<MyTaskVo> selectMyTasks(Long userId)
     {
         List<MyTaskVo> tasks = taskMyMapper.selectMyTasks(userId);
         for (MyTaskVo task : tasks)
         {
-            task.setCanSubmit(Boolean.TRUE);
+            task.setCanSubmit(taskPermissionService.canSubmitDeliverable(task.getDeliverableId(), userId));
             task.setTimeStatus(calculateTimeStatus(task.getDeadline(), task.getStatus()));
         }
         return tasks;

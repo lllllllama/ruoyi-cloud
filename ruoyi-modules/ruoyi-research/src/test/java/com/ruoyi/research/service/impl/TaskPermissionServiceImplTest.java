@@ -51,22 +51,42 @@ public class TaskPermissionServiceImplTest
     }
 
     @Test
-    public void unassignedDeliverableAllowsLeaderAndCoreOnly()
+    public void unassignedDeliverableAllowsAllNonLeaderMembers()
     {
         when(deliverableUserMapper.countByDeliverableId(30L)).thenReturn(0);
         when(researchPermissionService.isGroupLeader(1L, 10L)).thenReturn(true);
-        when(researchPermissionService.isGroupCore(1L, 11L)).thenReturn(true);
-        assertTrue(service.canSubmitDeliverable(30L, 10L));
+        assertFalse(service.canSubmitDeliverable(30L, 10L));
         assertTrue(service.canSubmitDeliverable(30L, 11L));
-        assertFalse(service.canSubmitDeliverable(30L, 12L));
-        assertFalse(service.canSubmitDeliverable(30L, 13L));
+        assertTrue(service.canSubmitDeliverable(30L, 12L));
+        assertTrue(service.canSubmitDeliverable(30L, 13L));
+        assertFalse(service.canSubmitDeliverable(30L, 1L));
     }
 
     @Test
-    public void inactiveOrUnrelatedUserCannotSubmitEvenIfAssigned()
+    public void leaderCannotSubmitEvenWhenAssigned()
+    {
+        when(researchPermissionService.isGroupLeader(1L, 10L)).thenReturn(true);
+        assertFalse(service.canSubmitDeliverable(30L, 10L));
+    }
+
+    @Test
+    public void adminCannotSubmitEvenWhenAssigned()
+    {
+        assertFalse(service.canSubmitDeliverable(30L, 1L));
+    }
+
+    @Test
+    public void outsiderCannotSubmit()
     {
         when(researchPermissionService.isGroupMember(1L, 20L)).thenReturn(false);
         assertFalse(service.canSubmitDeliverable(30L, 20L));
+    }
+
+    @Test
+    public void inactiveMemberCannotSubmit()
+    {
+        when(researchPermissionService.isGroupMember(1L, 21L)).thenReturn(false);
+        assertFalse(service.canSubmitDeliverable(30L, 21L));
     }
 
     @Test

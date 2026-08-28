@@ -62,7 +62,7 @@ public class TaskDeliverableUserServiceImpl implements TaskDeliverableUserServic
         for (Long userId : uniqueUserIds)
         {
             orgService.getUser(userId);
-            permissionService.assertGroupMember(deliverable.getGroupId(), userId);
+            permissionService.assertCanBeDeliverableAssignee(deliverable.getGroupId(), userId);
             TaskDeliverableUser relation = new TaskDeliverableUser();
             relation.setGroupId(deliverable.getGroupId());
             relation.setDeliverableId(deliverableId);

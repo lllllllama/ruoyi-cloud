@@ -11,6 +11,7 @@ import com.ruoyi.research.mapper.TaskDeliverableMapper;
 import com.ruoyi.research.mapper.TaskDeliverableUserMapper;
 import com.ruoyi.research.service.ResearchPermissionService;
 import com.ruoyi.research.service.TaskPermissionService;
+import com.ruoyi.research.util.ResearchSecurityUtils;
 
 @Service
 public class TaskPermissionServiceImpl implements TaskPermissionService
@@ -62,12 +63,16 @@ public class TaskPermissionServiceImpl implements TaskPermissionService
     @Override
     public boolean canSubmitDeliverable(Long deliverableId, Long userId)
     {
-        if (deliverableId == null || userId == null)
+        if (deliverableId == null || userId == null || ResearchSecurityUtils.isSystemAdmin(userId))
         {
             return false;
         }
         TaskDeliverable deliverable = deliverableMapper.selectById(deliverableId);
         if (deliverable == null || !researchPermissionService.isGroupMember(deliverable.getGroupId(), userId))
+        {
+            return false;
+        }
+        if (researchPermissionService.isGroupLeader(deliverable.getGroupId(), userId))
         {
             return false;
         }
@@ -79,8 +84,7 @@ public class TaskPermissionServiceImpl implements TaskPermissionService
             relation.setUserId(userId);
             return deliverableUserMapper.countByDeliverableAndUser(relation) > 0;
         }
-        return researchPermissionService.isGroupLeader(deliverable.getGroupId(), userId)
-                || researchPermissionService.isGroupCore(deliverable.getGroupId(), userId);
+        return true;
     }
 
     @Override
@@ -89,6 +93,24 @@ public class TaskPermissionServiceImpl implements TaskPermissionService
         if (!canSubmitDeliverable(deliverableId, userId))
         {
             throw new ServiceException("Current user is not allowed to submit this deliverable");
+        }
+    }
+
+    @Override
+    public boolean canBeDeliverableAssignee(Long groupId, Long userId)
+    {
+        return groupId != null && userId != null
+                && !ResearchSecurityUtils.isSystemAdmin(userId)
+                && researchPermissionService.isGroupMember(groupId, userId)
+                && !researchPermissionService.isGroupLeader(groupId, userId);
+    }
+
+    @Override
+    public void assertCanBeDeliverableAssignee(Long groupId, Long userId)
+    {
+        if (!canBeDeliverableAssignee(groupId, userId))
+        {
+            throw new ServiceException("Deliverable assignees must be active non-leader research group members");
         }
     }
 

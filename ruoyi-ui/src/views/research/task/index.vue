@@ -76,7 +76,7 @@
           <el-col :span="12"><el-form-item label="是否必交"><el-radio-group v-model="deliverableForm.isRequired"><el-radio label="1">必交</el-radio><el-radio label="0">选交</el-radio></el-radio-group></el-form-item></el-col>
           <el-col :span="12"><el-form-item label="排序"><el-input-number v-model="deliverableForm.sort" :min="0" :max="9999" style="width:100%" /></el-form-item></el-col>
         </el-row>
-        <el-form-item label="责任人"><el-select v-model="assigneeIds" multiple filterable clearable style="width:100%" placeholder="不指定时由负责人或核心成员提交"><el-option v-for="member in groupMemberOptions" :key="member.userId" :label="member.nickName || member.userName" :value="member.userId" /></el-select></el-form-item>
+        <el-form-item label="责任人"><el-select v-model="assigneeIds" multiple filterable clearable style="width:100%" placeholder="不指定责任人时，由除课题负责人外的其他有效课题成员提交"><el-option v-for="member in groupMemberOptions" :key="member.userId" :label="member.nickName || member.userName" :value="member.userId" /></el-select></el-form-item>
       </el-form>
       <div slot="footer"><el-button @click="deliverableFormOpen = false">取消</el-button><el-button type="primary" :loading="deliverableSaving" @click="saveDeliverable">确定</el-button></div>
     </el-dialog>
@@ -158,7 +158,9 @@ export default {
       this.deliverableTaskId = task.taskId
       this.deliverableTaskName = task.taskName
       this.deliverableOpen = true
-      Promise.all([groupMembers(task.groupId), this.loadDeliverables()]).then(([members]) => { this.groupMemberOptions = members.data || [] })
+      Promise.all([groupMembers(task.groupId), this.loadDeliverables()]).then(([members]) => {
+        this.groupMemberOptions = (members.data || []).filter(member => member.status === '0' && member.memberRole !== 'LEADER')
+      })
     },
     loadDeliverables() {
       this.deliverableLoading = true

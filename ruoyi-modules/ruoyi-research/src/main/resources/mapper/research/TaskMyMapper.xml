@@ -35,26 +35,6 @@
                 and active_member.user_id = #{userId}
                 and active_member.status = '0'
           )
-          and (
-              exists (
-                  select 1 from task_deliverable_user assigned
-                  where assigned.deliverable_id = d.deliverable_id
-                    and assigned.user_id = #{userId}
-              )
-              or (
-                  not exists (
-                      select 1 from task_deliverable_user any_assignee
-                      where any_assignee.deliverable_id = d.deliverable_id
-                  )
-                  and exists (
-                      select 1 from biz_research_group_member privileged_member
-                      where privileged_member.group_id = d.group_id
-                        and privileged_member.user_id = #{userId}
-                        and privileged_member.status = '0'
-                        and privileged_member.member_role in ('LEADER', 'CORE')
-                  )
-              )
-          )
         order by case when d.deadline is null then 1 else 0 end,
                  d.deadline asc, d.group_id, t.task_id, d.sort, d.deliverable_id
     </select>

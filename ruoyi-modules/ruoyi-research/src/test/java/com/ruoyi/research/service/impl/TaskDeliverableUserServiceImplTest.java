@@ -61,7 +61,7 @@ public class TaskDeliverableUserServiceImplTest
         verify(userMapper).batchInsert(argThat(relations -> relations.size() == 2));
 
         doThrow(new ServiceException("User is not an active research group member"))
-                .when(permissionService).assertGroupMember(1L, 22L);
+                .when(permissionService).assertCanBeDeliverableAssignee(1L, 22L);
         try
         {
             service.assign(30L, Arrays.asList(22L));
@@ -71,5 +71,46 @@ public class TaskDeliverableUserServiceImplTest
         {
             assertTrue(expected.getMessage().contains("research group member"));
         }
+    }
+
+    @Test
+    public void leaderCannotBeAssignedAsDeliverableAssignee()
+    {
+        doThrow(new ServiceException("Research group leaders cannot be deliverable assignees"))
+                .when(permissionService).assertCanBeDeliverableAssignee(1L, 20L);
+        try
+        {
+            service.assign(30L, Arrays.asList(20L));
+            fail("A research group leader must not be assigned");
+        }
+        catch (ServiceException expected)
+        {
+            assertTrue(expected.getMessage().contains("leaders"));
+        }
+    }
+
+    @Test
+    public void memberCanBeAssigned()
+    {
+        assertAssignable(20L);
+    }
+
+    @Test
+    public void coreCanBeAssigned()
+    {
+        assertAssignable(21L);
+    }
+
+    @Test
+    public void expertCanBeAssigned()
+    {
+        assertAssignable(22L);
+    }
+
+    private void assertAssignable(Long userId)
+    {
+        when(userMapper.batchInsert(any())).thenReturn(1);
+        assertEquals(1, service.assign(30L, Arrays.asList(userId)));
+        verify(permissionService).assertCanBeDeliverableAssignee(1L, userId);
     }
 }
