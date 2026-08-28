@@ -87,6 +87,70 @@ function Invoke-QaRawRequest {
     }
 }
 
+function Invoke-QaMultipartUpload {
+    param(
+        [Parameter(Mandatory = $true)][string]$BaseUrl,
+        [Parameter(Mandatory = $true)][string]$Token,
+        [Parameter(Mandatory = $true)][string]$FileName,
+        [Parameter(Mandatory = $true)][byte[]]$Content,
+        [string]$ContentType = 'application/octet-stream'
+    )
+
+    Add-Type -AssemblyName System.Net.Http
+    $client = New-Object System.Net.Http.HttpClient
+    $multipart = New-Object System.Net.Http.MultipartFormDataContent
+    $fileContent = New-Object System.Net.Http.ByteArrayContent -ArgumentList @(,$Content)
+    try {
+        $client.DefaultRequestHeaders.Authorization =
+            New-Object System.Net.Http.Headers.AuthenticationHeaderValue('Bearer', $Token)
+        $fileContent.Headers.ContentType =
+            New-Object System.Net.Http.Headers.MediaTypeHeaderValue($ContentType)
+        $multipart.Add($fileContent, 'file', $FileName)
+        $response = $client.PostAsync($BaseUrl.TrimEnd('/') + '/file/upload', $multipart).Result
+        $raw = $response.Content.ReadAsStringAsync().Result
+        $parsed = $null
+        try { $parsed = $raw | ConvertFrom-Json } catch { }
+        return [pscustomobject]@{
+            HttpStatus = [int]$response.StatusCode
+            Body = $parsed
+            Raw = $raw
+        }
+    }
+    finally {
+        $fileContent.Dispose()
+        $multipart.Dispose()
+        $client.Dispose()
+    }
+}
+
+function Invoke-QaBinaryRequest {
+    param(
+        [Parameter(Mandatory = $true)][string]$BaseUrl,
+        [Parameter(Mandatory = $true)][string]$Path,
+        [Parameter(Mandatory = $true)][string]$Token
+    )
+
+    Add-Type -AssemblyName System.Net.Http
+    $client = New-Object System.Net.Http.HttpClient
+    try {
+        $client.DefaultRequestHeaders.Authorization =
+            New-Object System.Net.Http.Headers.AuthenticationHeaderValue('Bearer', $Token)
+        $response = $client.GetAsync($BaseUrl.TrimEnd('/') + $Path).Result
+        return [pscustomobject]@{
+            HttpStatus = [int]$response.StatusCode
+            ContentType = $(if ($null -eq $response.Content.Headers.ContentType) {
+                $null
+            } else {
+                $response.Content.Headers.ContentType.MediaType
+            })
+            Bytes = $response.Content.ReadAsByteArrayAsync().Result
+        }
+    }
+    finally {
+        $client.Dispose()
+    }
+}
+
 function Test-QaSuccessResponse {
     param([Parameter(Mandatory = $true)]$Response)
 

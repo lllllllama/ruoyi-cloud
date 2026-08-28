@@ -147,6 +147,12 @@ $expertAToken = Get-QaToken -BaseUrl $BaseUrl -Username 'a_expert'
 $leaderBToken = Get-QaToken -BaseUrl $BaseUrl -Username 'b_leader'
 $coreBToken = Get-QaToken -BaseUrl $BaseUrl -Username 'b_core'
 $outsiderToken = Get-QaToken -BaseUrl $BaseUrl -Username 'outsider'
+$proofBytes = [Text.Encoding]::UTF8.GetBytes("research attachment proof $stamp")
+$uploadResponse = Invoke-QaMultipartUpload -BaseUrl $BaseUrl -Token $memberAToken `
+    -FileName "成果附件-$stamp.txt" -Content $proofBytes -ContentType 'text/plain'
+$uploadBody = Assert-QaSuccess -Response $uploadResponse -Label 'research proof upload'
+$proofUrl = $uploadBody.data.url
+Add-QaCase 'FILE-SERVICE-RESEARCH-PROOF-UPLOAD' (-not [string]::IsNullOrWhiteSpace($proofUrl)) $uploadResponse.Raw
 
 Write-Output '[2/9] Create A/B annual frameworks and verify maintenance permissions'
 $frameworkAName = "QA-A-$stamp"
@@ -290,8 +296,8 @@ Write-Output '[6/9] Verify attachment metadata permissions before workflow trans
 $attachmentResponse = Invoke-Api Post "/submission/$($submission1.submissionId)/attachments" $memberAToken @{
     fileName = 'qa-proof.txt'
     originalName = 'QA proof.txt'
-    fileUrl = '/profile/upload/qa/nonexistent-proof.txt'
-    fileSize = 8
+    fileUrl = $proofUrl
+    fileSize = $proofBytes.Length
     fileType = 'text/plain'
     groupId = $groupB
     uploadUserId = 1
@@ -339,6 +345,12 @@ $bApprove = Invoke-Api Put "/submission/$($submission1.submissionId)/approve" $l
 Add-QaCase 'WORKFLOW-B-LEADER-APPROVE-A-DENIED' (Test-Rejected $bApprove) $bApprove.Raw
 $approve1 = Invoke-Api Put "/submission/$($submission1.submissionId)/approve" $leaderAToken @{ opinion = 'Approved 1' }
 Add-QaCase 'WORKFLOW-PENDING-TO-ARCHIVED' (Test-QaSuccessResponse $approve1) $approve1.Raw
+$archivedDownload = Invoke-QaBinaryRequest -BaseUrl $BaseUrl `
+    -Path "/ruoyi-research/submission/attachment/$attachmentId/download" -Token $coreAToken
+$archivedBytesMatch = $archivedDownload.HttpStatus -eq 200 -and
+    [Convert]::ToBase64String($archivedDownload.Bytes) -eq [Convert]::ToBase64String($proofBytes)
+Add-QaCase 'ATTACHMENT-ARCHIVED-GROUP-MEMBER-DOWNLOAD-CONTENT' $archivedBytesMatch `
+    "HTTP=$($archivedDownload.HttpStatus),bytes=$($archivedDownload.Bytes.Length)"
 
 $archivedEdit = Invoke-Api Put '/submission' $memberAToken @{
     submissionId = $submission1.submissionId

@@ -94,6 +94,12 @@ $outsiderToken = Get-QaToken -BaseUrl $BaseUrl -Username 'outsider'
 $managerToken = Get-QaToken -BaseUrl $BaseUrl -Username 'alloc_manager'
 $allocationUserToken = Get-QaToken -BaseUrl $BaseUrl -Username 'alloc_user'
 $otherUnitToken = Get-QaToken -BaseUrl $BaseUrl -Username 'other_unit_user'
+$proofBytes = [Text.Encoding]::UTF8.GetBytes("fund attachment proof $stamp")
+$uploadResponse = Invoke-QaMultipartUpload -BaseUrl $BaseUrl -Token $memberAToken `
+    -FileName "资金凭证-$stamp.txt" -Content $proofBytes -ContentType 'text/plain'
+$uploadBody = Assert-QaSuccess -Response $uploadResponse -Label 'fund proof upload'
+$proofUrl = $uploadBody.data.url
+Add-QaCase 'FILE-SERVICE-FUND-PROOF-UPLOAD' (-not [string]::IsNullOrWhiteSpace($proofUrl)) $uploadResponse.Raw
 
 Write-Output '[2/7] Create budget, allocation plans and use plan'
 $budgetResponse = Invoke-Fund Post '/budget' $adminToken @{
@@ -191,7 +197,7 @@ Add-QaCase 'ALLOC-UNIT-MANAGER-ASSIGN-SUCCESS' (Test-QaSuccessResponse $assignRe
 $ordinaryAssign = Invoke-Fund Put "/allocation/plan/$assignedPlanId/assign" $allocationUserToken @{ responsibleUserId = 9109 }
 Add-QaCase 'ALLOC-ORDINARY-UNIT-MEMBER-ASSIGN-DENIED' (Test-Rejected $ordinaryAssign) $ordinaryAssign.Raw
 
-$assignedRecord = Add-AllocationRecord $assignedPlanId "QA-ALLOC-RECORD-$stamp" $allocationUserToken ([decimal]'10.00') '/profile/upload/qa/allocation-proof.txt'
+$assignedRecord = Add-AllocationRecord $assignedPlanId "QA-ALLOC-RECORD-$stamp" $allocationUserToken ([decimal]'10.00') $proofUrl
 Add-QaCase 'ALLOC-RESPONSIBLE-RECORD-SUCCESS' (Test-QaSuccessResponse $assignedRecord) $assignedRecord.Raw
 $assignedRecordId = [long](Get-DbScalar 'ry-fund' "select max(record_id) from fund_allocation_record where plan_id=$assignedPlanId and del_flag='0'")
 $allocationIdentity = Get-DbScalar 'ry-fund' "select submit_user_id from fund_allocation_record where record_id=$assignedRecordId"
@@ -208,7 +214,7 @@ $unassignedOtherRecord = Add-AllocationRecord $unassignedPlanId "QA-ALLOC-NONUNI
 Add-QaCase 'ALLOC-UNASSIGNED-NONUNIT-RECORD-DENIED' (Test-Rejected $unassignedOtherRecord) $unassignedOtherRecord.Raw
 
 Write-Output '[6/7] Verify use responsible-user permissions and identity tampering'
-$useRecord = Add-UseRecord $usePlanId "QA-USE-RECORD-$stamp" $memberAToken ([decimal]'10.00') '/profile/upload/qa/use-proof.txt'
+$useRecord = Add-UseRecord $usePlanId "QA-USE-RECORD-$stamp" $memberAToken ([decimal]'10.00') $proofUrl
 Add-QaCase 'USE-RESPONSIBLE-RECORD-SUCCESS' (Test-QaSuccessResponse $useRecord) $useRecord.Raw
 $useRecordId = [long](Get-DbScalar 'ry-fund' "select max(use_record_id) from fund_use_record where use_plan_id=$usePlanId and del_flag='0'")
 $useIdentity = Get-DbScalar 'ry-fund' "select submit_user_id from fund_use_record where use_record_id=$useRecordId"
@@ -227,6 +233,18 @@ $outsiderUseAttachment = Invoke-Fund Get "/fund/attachment/$useAttachmentId/down
 Add-QaCase 'ATTACHMENT-USE-OUTSIDER-DENIED' (Test-Rejected $outsiderUseAttachment) $outsiderUseAttachment.Raw
 $bUseAttachment = Invoke-Fund Get "/fund/attachment/$useAttachmentId/download" $leaderBToken
 Add-QaCase 'ATTACHMENT-USE-B-LEADER-DENIED' (Test-Rejected $bUseAttachment) $bUseAttachment.Raw
+$allocationDownload = Invoke-QaBinaryRequest -BaseUrl $BaseUrl `
+    -Path "/ruoyi-fund/fund/attachment/$allocationAttachmentId/download" -Token $leaderAToken
+$allocationBytesMatch = $allocationDownload.HttpStatus -eq 200 -and
+    [Convert]::ToBase64String($allocationDownload.Bytes) -eq [Convert]::ToBase64String($proofBytes)
+Add-QaCase 'ATTACHMENT-ALLOCATION-MEMBER-DOWNLOAD-CONTENT' $allocationBytesMatch `
+    "HTTP=$($allocationDownload.HttpStatus),bytes=$($allocationDownload.Bytes.Length)"
+$useDownload = Invoke-QaBinaryRequest -BaseUrl $BaseUrl `
+    -Path "/ruoyi-fund/fund/attachment/$useAttachmentId/download" -Token $memberAToken
+$useBytesMatch = $useDownload.HttpStatus -eq 200 -and
+    [Convert]::ToBase64String($useDownload.Bytes) -eq [Convert]::ToBase64String($proofBytes)
+Add-QaCase 'ATTACHMENT-USE-MEMBER-DOWNLOAD-CONTENT' $useBytesMatch `
+    "HTTP=$($useDownload.HttpStatus),bytes=$($useDownload.Bytes.Length)"
 
 $script:Results | Format-Table -AutoSize
 $failed = @($script:Results | Where-Object { $_.Status -eq 'FAIL' })
