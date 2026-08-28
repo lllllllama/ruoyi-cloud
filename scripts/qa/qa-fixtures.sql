@@ -113,7 +113,7 @@ WHERE path IN ('fund', 'allocation', 'use', 'research', 'framework', 'task',
        'task:framework:list', 'task:framework:add', 'task:info:list',
        'task:info:add', 'task:info:edit', 'task:info:remove',
        'task:deliverable:add', 'task:deliverable:assign',
-       'task:submission:add', 'task:submission:edit',
+       'task:submission:add', 'task:submission:edit', 'task:submission:withdraw',
        'task:submission:audit', 'task:submission:cancelAudit'
    );
 
@@ -123,7 +123,8 @@ SELECT 9202, menu_id FROM `ry-cloud`.`sys_menu`
 WHERE path IN ('fund', 'allocation', 'use', 'research', 'task',
                'my-task', 'archive', 'submission')
    OR perms IN ('fund:allocation:list', 'fund:use:list', 'fund:use:record', 'fund:use:finish',
-                'task:info:list', 'task:submission:add', 'task:submission:edit');
+                'task:info:list', 'task:submission:add', 'task:submission:edit',
+                'task:submission:withdraw');
 
 -- Outsider is intentionally granted only the public allocation page.
 INSERT IGNORE INTO `ry-cloud`.`sys_role_menu` (role_id, menu_id)
