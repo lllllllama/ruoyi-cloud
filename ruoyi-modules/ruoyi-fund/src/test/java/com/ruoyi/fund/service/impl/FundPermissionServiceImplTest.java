@@ -3,6 +3,7 @@ package com.ruoyi.fund.service.impl;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.Mockito.never;
+import static org.mockito.Mockito.doThrow;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
@@ -86,6 +87,34 @@ public class FundPermissionServiceImplTest
             public void run()
             {
                 service.assertCanOperateUse(use, 11L);
+            }
+        });
+    }
+
+    @Test
+    public void assignedResponsibleUserMustStillBeAnActiveGroupMember()
+    {
+        doThrow(new ServiceException("inactive group member"))
+                .when(researchService).assertGroupMember(GROUP_ID, USER_ID);
+
+        final FundAllocationPlan allocation = allocationPlan();
+        allocation.setResponsibleUserId(USER_ID);
+        expectDenied(new Action()
+        {
+            public void run()
+            {
+                service.assertCanOperateAllocation(allocation, USER_ID);
+            }
+        });
+
+        final FundUsePlan use = new FundUsePlan();
+        use.setTopicId(GROUP_ID);
+        use.setResponsibleUserId(USER_ID);
+        expectDenied(new Action()
+        {
+            public void run()
+            {
+                service.assertCanOperateUse(use, USER_ID);
             }
         });
     }

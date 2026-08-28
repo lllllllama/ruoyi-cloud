@@ -40,6 +40,7 @@ public class FundPermissionServiceImpl implements FundPermissionService
     public void assertCanOperateAllocation(FundAllocationPlan plan, Long userId)
     {
         if (FundSecurityUtils.isSystemAdmin()) return;
+        researchService.assertGroupMember(plan.getTopicId(), userId);
         if (plan.getResponsibleUserId() != null && !userId.equals(plan.getResponsibleUserId()))
             throw new ServiceException("该计划已指定责任人，仅责任人可操作");
         if (plan.getResponsibleUserId() == null
@@ -50,6 +51,7 @@ public class FundPermissionServiceImpl implements FundPermissionService
     public void assertCanOperateUse(FundUsePlan plan, Long userId)
     {
         if (FundSecurityUtils.isSystemAdmin()) return;
+        researchService.assertGroupMember(plan.getTopicId(), userId);
         if (plan.getResponsibleUserId() != null && !userId.equals(plan.getResponsibleUserId()))
             throw new ServiceException("该计划已指定责任人，仅责任人可操作");
         if (plan.getResponsibleUserId() == null) researchService.assertGroupMember(plan.getTopicId(), userId);
