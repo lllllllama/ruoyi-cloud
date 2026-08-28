@@ -19,6 +19,8 @@ public interface TaskSubmissionService
 
     void submit(Long submissionId);
 
+    void withdraw(Long submissionId, String reason);
+
     void approve(Long submissionId, String opinion);
 
     void reject(Long submissionId, String opinion);

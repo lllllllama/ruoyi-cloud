@@ -192,6 +192,97 @@ public class TaskSubmissionServiceImplTest
     }
 
     @Test
+    public void pendingCannotDelete()
+    {
+        TaskSubmission pending = storedSubmission("1");
+        when(submissionMapper.selectById(40L)).thenReturn(pending);
+
+        try
+        {
+            service.deleteDraft(40L);
+            fail("Pending submission must not be deleted");
+        }
+        catch (ServiceException expected)
+        {
+            assertTrue(expected.getMessage().contains("draft or rejected"));
+        }
+        verify(submissionMapper, never()).deleteDraft(anyLong(), anyInt(), any(String.class));
+        verify(attachmentService, never()).deleteBySubmissionId(anyLong());
+    }
+
+    @Test
+    public void pendingOwnerCanView()
+    {
+        TaskSubmission pending = storedSubmission("1");
+        when(submissionMapper.selectById(40L)).thenReturn(pending);
+
+        assertEquals(pending, service.selectById(40L));
+        verify(taskPermissionService).assertCanViewSubmission(pending, 10L);
+    }
+
+    @Test
+    public void pendingOwnerCanWithdraw()
+    {
+        TaskSubmission pending = storedSubmission("1");
+        when(submissionMapper.selectForUpdate(40L)).thenReturn(pending);
+        when(submissionMapper.withdraw(40L, 0, "submitter")).thenReturn(1);
+
+        service.withdraw(40L, "need correction");
+
+        verify(submissionMapper).withdraw(40L, 0, "submitter");
+        verify(auditService).record(pending, "WITHDRAW", "1", "0", "need correction");
+    }
+
+    @Test
+    public void pendingNonOwnerCannotWithdraw()
+    {
+        TaskSubmission pending = storedSubmission("1");
+        pending.setSubmitUserId(11L);
+        when(submissionMapper.selectForUpdate(40L)).thenReturn(pending);
+        doThrow(new ServiceException("Only the submitter may modify this submission"))
+                .when(taskPermissionService).assertSubmissionOwner(pending, 10L);
+
+        try
+        {
+            service.withdraw(40L, null);
+            fail("A non-owner must not withdraw another user's submission");
+        }
+        catch (ServiceException expected)
+        {
+            assertTrue(expected.getMessage().contains("submitter"));
+        }
+        verify(submissionMapper, never()).withdraw(anyLong(), anyInt(), any(String.class));
+    }
+
+    @Test
+    public void leaderCannotWithdrawMemberSubmission()
+    {
+        assertPrivilegedNonOwnerCannotWithdraw("Research group leader cannot withdraw a member submission");
+    }
+
+    @Test
+    public void adminCannotWithdrawOtherUsersSubmission()
+    {
+        assertPrivilegedNonOwnerCannotWithdraw("Administrator cannot withdraw another user's submission");
+    }
+
+    @Test
+    public void withdrawPreservesSubmissionData()
+    {
+        TaskSubmission pending = storedSubmission("1");
+        pending.setSubmissionName("Original name");
+        pending.setSubmissionDesc("Original description");
+        when(submissionMapper.selectForUpdate(40L)).thenReturn(pending);
+        when(submissionMapper.withdraw(40L, 0, "submitter")).thenReturn(1);
+
+        service.withdraw(40L, null);
+
+        assertEquals("Original name", pending.getSubmissionName());
+        assertEquals("Original description", pending.getSubmissionDesc());
+        verify(attachmentService, never()).deleteBySubmissionId(anyLong());
+    }
+
+    @Test
     public void removedAssigneeCannotContinueEditingExistingDraft()
     {
         TaskSubmission old = input();
@@ -346,5 +437,24 @@ public class TaskSubmissionServiceImplTest
         submission.setStatus(status);
         submission.setVersion(0);
         return submission;
+    }
+
+    private void assertPrivilegedNonOwnerCannotWithdraw(String message)
+    {
+        TaskSubmission pending = storedSubmission("1");
+        pending.setSubmitUserId(11L);
+        when(submissionMapper.selectForUpdate(40L)).thenReturn(pending);
+        doThrow(new ServiceException("Only the submitter may modify this submission"))
+                .when(taskPermissionService).assertSubmissionOwner(pending, 10L);
+        try
+        {
+            service.withdraw(40L, null);
+            fail(message);
+        }
+        catch (ServiceException expected)
+        {
+            assertTrue(expected.getMessage().contains("submitter"));
+        }
+        verify(submissionMapper, never()).withdraw(anyLong(), anyInt(), any(String.class));
     }
 }

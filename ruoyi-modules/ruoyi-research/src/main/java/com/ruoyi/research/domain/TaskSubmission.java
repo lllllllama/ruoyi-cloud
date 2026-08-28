@@ -37,6 +37,7 @@ public class TaskSubmission extends BaseEntity
     private String groupName;
     private String submitUserName;
     private String archiveUserName;
+    private Boolean canWithdraw;
 
     public Long getSubmissionId() { return submissionId; }
     public void setSubmissionId(Long submissionId) { this.submissionId = submissionId; }
@@ -76,4 +77,6 @@ public class TaskSubmission extends BaseEntity
     public void setSubmitUserName(String submitUserName) { this.submitUserName = submitUserName; }
     public String getArchiveUserName() { return archiveUserName; }
     public void setArchiveUserName(String archiveUserName) { this.archiveUserName = archiveUserName; }
+    public Boolean getCanWithdraw() { return canWithdraw; }
+    public void setCanWithdraw(Boolean canWithdraw) { this.canWithdraw = canWithdraw; }
 }

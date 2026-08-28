@@ -10,8 +10,10 @@ import com.ruoyi.research.domain.TaskSubmission;
 import com.ruoyi.research.domain.TaskSubmissionAudit;
 import com.ruoyi.research.mapper.TaskSubmissionAuditMapper;
 import com.ruoyi.research.mapper.TaskSubmissionMapper;
+import com.ruoyi.research.service.ResearchOrgService;
 import com.ruoyi.research.service.TaskPermissionService;
 import com.ruoyi.research.service.TaskSubmissionAuditService;
+import com.ruoyi.system.api.domain.FundUserOption;
 
 @Service
 public class TaskSubmissionAuditServiceImpl implements TaskSubmissionAuditService
@@ -25,6 +27,9 @@ public class TaskSubmissionAuditServiceImpl implements TaskSubmissionAuditServic
     @Autowired
     private TaskPermissionService permissionService;
 
+    @Autowired
+    private ResearchOrgService orgService;
+
     @Override
     public List<TaskSubmissionAudit> selectBySubmissionId(Long submissionId)
     {
@@ -34,7 +39,12 @@ public class TaskSubmissionAuditServiceImpl implements TaskSubmissionAuditServic
             throw new ServiceException("Deliverable submission does not exist");
         }
         permissionService.assertCanViewSubmission(submission, SecurityUtils.getUserId());
-        return auditMapper.selectBySubmissionId(submissionId);
+        List<TaskSubmissionAudit> audits = auditMapper.selectBySubmissionId(submissionId);
+        for (TaskSubmissionAudit audit : audits)
+        {
+            enrichAuditUser(audit);
+        }
+        return audits;
     }
 
     @Override
@@ -51,5 +61,25 @@ public class TaskSubmissionAuditServiceImpl implements TaskSubmissionAuditServic
         audit.setAuditOpinion(opinion == null ? null : opinion.trim());
         audit.setAuditTime(new Date());
         auditMapper.insert(audit);
+    }
+
+    private void enrichAuditUser(TaskSubmissionAudit audit)
+    {
+        if (audit.getAuditUserId() == null)
+        {
+            return;
+        }
+        try
+        {
+            FundUserOption user = orgService.getUser(audit.getAuditUserId());
+            if (user != null)
+            {
+                audit.setAuditUserName(user.getNickName());
+            }
+        }
+        catch (ServiceException ignored)
+        {
+            // Historical audit rows remain readable even if the operator account no longer exists.
+        }
     }
 }

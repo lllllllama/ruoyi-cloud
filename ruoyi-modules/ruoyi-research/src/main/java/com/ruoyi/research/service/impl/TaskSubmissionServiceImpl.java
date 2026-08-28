@@ -180,6 +180,19 @@ public class TaskSubmissionServiceImpl implements TaskSubmissionService
 
     @Override
     @Transactional
+    public void withdraw(Long submissionId, String reason)
+    {
+        TaskSubmission submission = requireSubmissionForUpdate(submissionId);
+        assertOwner(submission);
+        requireStatus(submission, STATUS_PENDING, "Only a pending submission may be withdrawn");
+        assertTransition(submissionMapper.withdraw(submissionId, submission.getVersion(),
+                SecurityUtils.getUsername()));
+        auditService.record(submission, "WITHDRAW", STATUS_PENDING, STATUS_DRAFT,
+                trimOpinion(reason));
+    }
+
+    @Override
+    @Transactional
     public void approve(Long submissionId, String opinion)
     {
         TaskSubmission submission = requireSubmissionForUpdate(submissionId);
@@ -303,6 +316,9 @@ public class TaskSubmissionServiceImpl implements TaskSubmissionService
 
     private void enrichUserNames(TaskSubmission submission)
     {
+        Long currentUserId = SecurityUtils.getUserId();
+        submission.setCanWithdraw(STATUS_PENDING.equals(submission.getStatus())
+                && currentUserId.equals(submission.getSubmitUserId()));
         if (submission.getSubmitUserId() != null)
         {
             FundUserOption user = orgService.getUser(submission.getSubmitUserId());

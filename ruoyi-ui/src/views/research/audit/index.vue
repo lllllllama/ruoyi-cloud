@@ -55,7 +55,7 @@ export default {
         return approve ? approveSubmission(row.submissionId, value) : rejectSubmission(row.submissionId, value)
       }).then(() => { this.$modal.msgSuccess(title + '成功'); this.load() }).catch(() => {})
     },
-    actionName(action) { return { SUBMIT: '提交', APPROVE: '审核通过', REJECT: '退回', RESUBMIT: '重新提交', CANCEL_APPROVE: '取消审核' }[action] || action },
+    actionName(action) { return { SUBMIT: '提交', WITHDRAW: '撤回', APPROVE: '审核通过', REJECT: '退回', RESUBMIT: '重新提交', CANCEL_APPROVE: '取消审核' }[action] || action },
     download(file) { downloadSubmissionAttachment(file.attachmentId).then(blob => { const link = document.createElement('a'); link.href = URL.createObjectURL(blob); link.download = file.originalName || 'attachment'; link.click(); URL.revokeObjectURL(link.href) }) }
   }
 }

@@ -30,6 +30,10 @@ export function submitSubmission(id) {
   return request({ url: base + '/' + id + '/submit', method: 'put' })
 }
 
+export function withdrawSubmission(id, reason) {
+  return request({ url: base + '/' + id + '/withdraw', method: 'put', data: { opinion: reason } })
+}
+
 export function resubmitSubmission(id, opinion) {
   return request({ url: base + '/' + id + '/resubmit', method: 'put', data: { opinion } })
 }

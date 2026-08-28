@@ -26,6 +26,9 @@ public interface TaskSubmissionMapper
     int submit(@Param("submissionId") Long submissionId, @Param("version") Integer version,
             @Param("updateBy") String updateBy);
 
+    int withdraw(@Param("submissionId") Long submissionId, @Param("version") Integer version,
+            @Param("updateBy") String updateBy);
+
     int resubmit(@Param("submissionId") Long submissionId, @Param("version") Integer version,
             @Param("updateBy") String updateBy);
 

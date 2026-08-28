@@ -14,6 +14,7 @@ public class TaskSubmissionAudit implements Serializable
     private String beforeStatus;
     private String afterStatus;
     private Long auditUserId;
+    private String auditUserName;
     private String auditOpinion;
     private Date auditTime;
 
@@ -31,6 +32,8 @@ public class TaskSubmissionAudit implements Serializable
     public void setAfterStatus(String afterStatus) { this.afterStatus = afterStatus; }
     public Long getAuditUserId() { return auditUserId; }
     public void setAuditUserId(Long auditUserId) { this.auditUserId = auditUserId; }
+    public String getAuditUserName() { return auditUserName; }
+    public void setAuditUserName(String auditUserName) { this.auditUserName = auditUserName; }
     public String getAuditOpinion() { return auditOpinion; }
     public void setAuditOpinion(String auditOpinion) { this.auditOpinion = auditOpinion; }
     public Date getAuditTime() { return auditTime; }

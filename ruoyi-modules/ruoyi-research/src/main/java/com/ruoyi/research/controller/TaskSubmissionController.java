@@ -137,6 +137,15 @@ public class TaskSubmissionController extends BaseController
         return AjaxResult.success();
     }
 
+    @RequiresPermissions("task:submission:withdraw")
+    @PutMapping("/{id}/withdraw")
+    public AjaxResult withdraw(@PathVariable("id") Long id,
+            @Validated @RequestBody(required = false) TaskAuditRequest request)
+    {
+        submissionService.withdraw(id, request == null ? null : request.getOpinion());
+        return AjaxResult.success();
+    }
+
     @RequiresPermissions("task:submission:add")
     @PutMapping("/{id}/resubmit")
     public AjaxResult resubmit(@PathVariable("id") Long id,

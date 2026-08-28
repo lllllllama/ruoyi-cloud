@@ -18,8 +18,21 @@
       <el-form-item v-if="editable" label="新增附件"><file-upload v-model="newFileUrls" :limit="8" :file-size="20" :file-type="fileTypes" /></el-form-item>
     </el-form>
 
+    <section v-if="form.submissionId" class="audit-section">
+      <h3>处理记录</h3>
+      <el-timeline v-if="audits.length">
+        <el-timeline-item v-for="item in audits" :key="item.auditId" :timestamp="formatDateTime(item.auditTime)" placement="top">
+          <strong>{{ actionName(item.action) }}</strong>
+          <span class="audit-actor">操作人：{{ item.auditUserName || item.auditUserId }}</span>
+          <p v-if="item.auditOpinion" class="audit-opinion">{{ item.auditOpinion }}</p>
+        </el-timeline-item>
+      </el-timeline>
+      <el-empty v-else :image-size="60" description="暂无处理记录" />
+    </section>
+
     <div class="action-bar">
       <el-button @click="$router.back()">返回</el-button>
+      <el-button v-if="form.canWithdraw" v-hasPermi="['task:submission:withdraw']" type="warning" plain :loading="saving" @click="withdraw">撤回到草稿</el-button>
       <el-button v-if="form.submissionId && editable" type="danger" plain :loading="saving" @click="remove">删除</el-button>
       <el-button v-if="editable" :loading="saving" @click="save(false)">保存草稿</el-button>
       <el-button v-if="editable" type="primary" :loading="saving" @click="save(true)">{{ form.status === '2' ? '重新提交' : '提交审核' }}</el-button>
@@ -29,13 +42,13 @@
 
 <script>
 import { getDeliverable } from '@/api/research/deliverable'
-import { getSubmission, addSubmission, updateSubmission, deleteSubmission, submitSubmission, resubmitSubmission, listSubmissionAttachments, addSubmissionAttachment, deleteSubmissionAttachment, downloadSubmissionAttachment } from '@/api/research/submission'
+import { getSubmission, addSubmission, updateSubmission, deleteSubmission, submitSubmission, withdrawSubmission, resubmitSubmission, listSubmissionAttachments, addSubmissionAttachment, deleteSubmissionAttachment, downloadSubmissionAttachment, listSubmissionAudits } from '@/api/research/submission'
 
 export default {
   name: 'ResearchSubmission',
   data() {
     return {
-      saving: false, deliverable: {}, form: {}, attachments: [], newFileUrls: '',
+      saving: false, deliverable: {}, form: {}, attachments: [], audits: [], newFileUrls: '',
       fileTypes: ['doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'pdf', 'txt', 'zip', 'rar', 'png', 'jpg', 'jpeg'],
       rules: { submissionName: [{ required: true, message: '请输入成果名称', trigger: 'blur' }] }
     }
@@ -51,9 +64,10 @@ export default {
     const submissionId = Number(this.$route.query.submissionId || 0)
     const deliverableId = Number(this.$route.query.deliverableId || 0)
     if (submissionId) {
-      Promise.all([getSubmission(submissionId), listSubmissionAttachments(submissionId)]).then(([detail, files]) => {
+      Promise.all([getSubmission(submissionId), listSubmissionAttachments(submissionId), listSubmissionAudits(submissionId)]).then(([detail, files, audits]) => {
         this.form = detail.data || {}
         this.attachments = files.data || []
+        this.audits = audits.data || []
       })
     } else if (deliverableId) {
       getDeliverable(deliverableId).then(res => {
@@ -67,6 +81,8 @@ export default {
   methods: {
     statusName(status) { return { '0': '草稿', '1': '待审核', '2': '已退回', '3': '已归档' }[status] || status },
     statusType(status) { return { '0': 'info', '1': 'warning', '2': 'danger', '3': 'success' }[status] || '' },
+    actionName(action) { return { SUBMIT: '提交审核', WITHDRAW: '撤回', APPROVE: '审核通过', REJECT: '退回修改', RESUBMIT: '重新提交', CANCEL_APPROVE: '取消审核' }[action] || action },
+    formatDateTime(value) { return value ? this.parseTime(value) : '—' },
     save(shouldSubmit) {
       this.$refs.form.validate(valid => {
         if (!valid) return
@@ -93,10 +109,20 @@ export default {
       })).then(() => { this.newFileUrls = '' })
     },
     reload() {
-      return Promise.all([getSubmission(this.form.submissionId), listSubmissionAttachments(this.form.submissionId)]).then(([detail, files]) => {
+      return Promise.all([getSubmission(this.form.submissionId), listSubmissionAttachments(this.form.submissionId), listSubmissionAudits(this.form.submissionId)]).then(([detail, files, audits]) => {
         this.form = detail.data || {}
         this.attachments = files.data || []
+        this.audits = audits.data || []
       })
+    },
+    withdraw() {
+      this.$prompt('可填写撤回原因', '撤回成果', { inputType: 'textarea', inputPlaceholder: '选填' }).then(({ value }) => {
+        this.saving = true
+        return withdrawSubmission(this.form.submissionId, value)
+      }).then(() => {
+        this.$modal.msgSuccess('已撤回为草稿，可继续修改')
+        return this.reload()
+      }).catch(() => {}).finally(() => { this.saving = false })
     },
     remove() {
       this.$modal.confirm('确认删除当前成果提交吗？').then(() => {
@@ -123,4 +149,8 @@ export default {
 .delete-link { color: #f56c6c; }
 .action-bar { margin: 24px 0 0 100px; }
 .mb16 { margin-bottom: 16px; }
+.audit-section { max-width: 820px; margin: 24px 0 0 100px; padding-top: 8px; border-top: 1px solid #ebeef5; }
+.audit-section h3 { font-size: 16px; }
+.audit-actor { margin-left: 12px; color: #909399; }
+.audit-opinion { margin: 8px 0 0; padding: 8px 12px; color: #606266; background: #f5f7fa; border-radius: 4px; }
 </style>

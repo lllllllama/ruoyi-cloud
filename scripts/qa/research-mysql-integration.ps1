@@ -342,6 +342,20 @@ Add-QaCase 'WORKFLOW-PENDING-EDIT-DENIED' (Test-Rejected $pendingEdit) $pendingE
 $pendingDelete = Invoke-Api Delete "/submission/$($submission1.submissionId)" $memberAToken
 Add-QaCase 'WORKFLOW-PENDING-DELETE-DENIED' (Test-Rejected $pendingDelete) $pendingDelete.Raw
 
+$leaderWithdraw = Invoke-Api Put "/submission/$($submission1.submissionId)/withdraw" $leaderAToken @{ opinion = 'leader must not withdraw' }
+Add-QaCase 'WORKFLOW-LEADER-WITHDRAW-MEMBER-DENIED' (Test-Rejected $leaderWithdraw) $leaderWithdraw.Raw
+$adminWithdraw = Invoke-Api Put "/submission/$($submission1.submissionId)/withdraw" $adminToken @{ opinion = 'admin must not withdraw' }
+Add-QaCase 'WORKFLOW-ADMIN-WITHDRAW-MEMBER-DENIED' (Test-Rejected $adminWithdraw) $adminWithdraw.Raw
+$beforeWithdrawData = Get-DbScalar "select concat(submission_name,'|',submission_desc,'|',(select count(*) from task_attachment a where a.submission_id=s.submission_id and a.del_flag='0')) from task_submission s where submission_id=$($submission1.submissionId)"
+$withdraw1 = Invoke-Api Put "/submission/$($submission1.submissionId)/withdraw" $memberAToken @{ opinion = 'Fix before review' }
+Add-QaCase 'WORKFLOW-PENDING-TO-DRAFT-BY-OWNER' (Test-QaSuccessResponse $withdraw1) $withdraw1.Raw
+$afterWithdrawData = Get-DbScalar "select concat(status,'|',ifnull(submit_time,'NULL'),'|',submission_name,'|',submission_desc,'|',(select count(*) from task_attachment a where a.submission_id=s.submission_id and a.del_flag='0')) from task_submission s where submission_id=$($submission1.submissionId)"
+Add-QaCase 'WORKFLOW-WITHDRAW-PRESERVES-DATA-AND-ATTACHMENT' ($afterWithdrawData -eq "0|NULL|$beforeWithdrawData") $afterWithdrawData
+$withdrawAction = Get-DbScalar "select concat(action,',',before_status,',',after_status,',',audit_user_id,',',audit_opinion) from task_submission_audit where submission_id=$($submission1.submissionId) order by audit_id desc limit 1"
+Add-QaCase 'WORKFLOW-WITHDRAW-AUDIT' ($withdrawAction -eq 'WITHDRAW,1,0,9103,Fix before review') $withdrawAction
+$submitAfterWithdraw = Invoke-Api Put "/submission/$($submission1.submissionId)/submit" $memberAToken
+Add-QaCase 'WORKFLOW-WITHDRAWN-DRAFT-RESUBMIT' (Test-QaSuccessResponse $submitAfterWithdraw) $submitAfterWithdraw.Raw
+
 $rejectNoOpinion = Invoke-Api Put "/submission/$($submission1.submissionId)/reject" $leaderAToken @{}
 Add-QaCase 'WORKFLOW-REJECT-OPINION-REQUIRED' (Test-Rejected $rejectNoOpinion) $rejectNoOpinion.Raw
 $reject1 = Invoke-Api Put "/submission/$($submission1.submissionId)/reject" $leaderAToken @{ opinion = 'Please revise' }
@@ -404,9 +418,9 @@ Add-QaCase 'COMPLETION-CANCEL-ROLLS-BACK-TREE' ($rollbackState -eq '1,1,1,1,1,1'
 
 Write-Output '[9/9] Verify immutable audit history'
 $auditActions = Get-DbScalar "select group_concat(action order by audit_id separator ',') from task_submission_audit where submission_id=$($submission1.submissionId)"
-Add-QaCase 'AUDIT-FULL-STATE-MACHINE-HISTORY' ($auditActions -eq 'SUBMIT,REJECT,RESUBMIT,APPROVE,CANCEL_APPROVE') $auditActions
+Add-QaCase 'AUDIT-FULL-STATE-MACHINE-HISTORY' ($auditActions -eq 'SUBMIT,WITHDRAW,SUBMIT,REJECT,RESUBMIT,APPROVE,CANCEL_APPROVE') $auditActions
 $auditActors = Get-DbScalar "select group_concat(audit_user_id order by audit_id separator ',') from task_submission_audit where submission_id=$($submission1.submissionId)"
-Add-QaCase 'AUDIT-ACTORS-FROM-TOKEN' ($auditActors -eq '9103,9101,9103,9101,9101') $auditActors
+Add-QaCase 'AUDIT-ACTORS-FROM-TOKEN' ($auditActors -eq '9103,9103,9103,9101,9103,9101,9101') $auditActors
 $submission2Actions = Get-DbScalar "select group_concat(action order by audit_id separator ',') from task_submission_audit where submission_id=$($submission2.submissionId)"
 Add-QaCase 'AUDIT-SECOND-SUBMISSION-HISTORY' ($submission2Actions -eq 'SUBMIT,APPROVE') $submission2Actions
 

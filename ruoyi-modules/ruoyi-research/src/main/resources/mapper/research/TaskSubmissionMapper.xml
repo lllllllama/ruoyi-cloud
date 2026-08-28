@@ -120,6 +120,14 @@
           and del_flag = '0' and version = #{version}
     </update>
 
+    <update id="withdraw">
+        update task_submission
+        set status = '0', submit_time = null, update_by = #{updateBy},
+            update_time = sysdate(), version = version + 1
+        where submission_id = #{submissionId} and status = '1'
+          and del_flag = '0' and version = #{version}
+    </update>
+
     <update id="resubmit">
         update task_submission
         set status = '1', submit_time = sysdate(), archive_user_id = null, archive_time = null,
