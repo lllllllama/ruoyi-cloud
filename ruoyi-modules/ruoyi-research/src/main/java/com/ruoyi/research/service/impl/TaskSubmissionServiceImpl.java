@@ -96,8 +96,8 @@ public class TaskSubmissionServiceImpl implements TaskSubmissionService
     {
         normalize(submission);
         Long userId = SecurityUtils.getUserId();
-        taskPermissionService.assertCanSubmitDeliverable(submission.getDeliverableId(), userId);
-        TaskDeliverable deliverable = requireDeliverable(submission.getDeliverableId());
+        TaskDeliverable deliverable = requireDeliverableForUpdate(submission.getDeliverableId());
+        taskPermissionService.assertCanCreateSubmission(submission.getDeliverableId(), userId);
         TaskInfo task = requireTask(deliverable.getTaskId());
         if (!deliverable.getGroupId().equals(task.getGroupId()))
         {
@@ -317,8 +317,16 @@ public class TaskSubmissionServiceImpl implements TaskSubmissionService
     private void enrichUserNames(TaskSubmission submission)
     {
         Long currentUserId = SecurityUtils.getUserId();
-        submission.setCanWithdraw(STATUS_PENDING.equals(submission.getStatus())
-                && currentUserId.equals(submission.getSubmitUserId()));
+        boolean owner = currentUserId.equals(submission.getSubmitUserId());
+        boolean editableStatus = STATUS_DRAFT.equals(submission.getStatus())
+                || STATUS_REJECTED.equals(submission.getStatus());
+        boolean canProcess = owner && editableStatus
+                && taskPermissionService.canSubmitDeliverable(submission.getDeliverableId(), currentUserId);
+        submission.setCanEdit(canProcess);
+        submission.setCanDelete(canProcess);
+        submission.setCanWithdraw(owner && STATUS_PENDING.equals(submission.getStatus()));
+        submission.setCanAudit(STATUS_PENDING.equals(submission.getStatus())
+                && taskPermissionService.canAuditSubmission(submission, currentUserId));
         if (submission.getSubmitUserId() != null)
         {
             FundUserOption user = orgService.getUser(submission.getSubmitUserId());
@@ -337,9 +345,9 @@ public class TaskSubmissionServiceImpl implements TaskSubmissionService
         }
     }
 
-    private TaskDeliverable requireDeliverable(Long deliverableId)
+    private TaskDeliverable requireDeliverableForUpdate(Long deliverableId)
     {
-        TaskDeliverable deliverable = deliverableMapper.selectById(deliverableId);
+        TaskDeliverable deliverable = deliverableMapper.selectForUpdate(deliverableId);
         if (deliverable == null)
         {
             throw new ServiceException("Task deliverable does not exist");

@@ -331,7 +331,7 @@ Add-QaCase 'WORKFLOW-PENDING-DB' ($pendingStatus -eq '1') $pendingStatus
 $minePendingResponse = Invoke-Api Get "/submission/mine?deliverableId=$($deliverable.deliverableId)" $memberAToken
 $minePendingRows = @((Assert-QaSuccess -Response $minePendingResponse -Label 'member mine pending').data)
 $minePending = $minePendingRows | Where-Object submissionId -eq $submission1.submissionId | Select-Object -First 1
-Add-QaCase 'SUBMISSION-MINE-KEEPS-PENDING-VISIBLE' ($null -ne $minePending -and $minePending.status -eq '1') $minePendingResponse.Raw
+Add-QaCase 'SUBMISSION-MINE-KEEPS-PENDING-VISIBLE' ($null -ne $minePending -and $minePending.status -eq '1' -and $minePending.canWithdraw) $minePendingResponse.Raw
 
 $pendingEdit = Invoke-Api Put '/submission' $memberAToken @{
     submissionId = $submission1.submissionId
@@ -341,6 +341,8 @@ $pendingEdit = Invoke-Api Put '/submission' $memberAToken @{
 Add-QaCase 'WORKFLOW-PENDING-EDIT-DENIED' (Test-Rejected $pendingEdit) $pendingEdit.Raw
 $pendingDelete = Invoke-Api Delete "/submission/$($submission1.submissionId)" $memberAToken
 Add-QaCase 'WORKFLOW-PENDING-DELETE-DENIED' (Test-Rejected $pendingDelete) $pendingDelete.Raw
+$selfApprove = Invoke-Api Put "/submission/$($submission1.submissionId)/approve" $memberAToken @{ opinion = 'self audit' }
+Add-QaCase 'WORKFLOW-SUBMITTER-SELF-AUDIT-DENIED' (Test-Rejected $selfApprove) $selfApprove.Raw
 
 $leaderWithdraw = Invoke-Api Put "/submission/$($submission1.submissionId)/withdraw" $leaderAToken @{ opinion = 'leader must not withdraw' }
 Add-QaCase 'WORKFLOW-LEADER-WITHDRAW-MEMBER-DENIED' (Test-Rejected $leaderWithdraw) $leaderWithdraw.Raw
@@ -407,6 +409,13 @@ Add-QaCase 'SUBMISSION-2-APPROVE' (Test-QaSuccessResponse $approve2) $approve2.R
 
 $finishedState = Get-DbScalar "select concat(d.archived_num,',',d.status,',',l.status,',',p.status,',',r.status) from task_deliverable d join task_info l on l.task_id=d.task_id join task_info p on p.task_id=l.parent_id join task_info r on r.task_id=p.parent_id where d.deliverable_id=$($deliverable.deliverableId)"
 Add-QaCase 'COMPLETION-2-ARCHIVED-FINISHES-TREE' ($finishedState -eq '2,2,2,2,2') $finishedState
+$completedCanSubmit = Invoke-Api Get "/deliverable/$($deliverable.deliverableId)/can-submit" $memberAToken
+$completedCanSubmitBody = Assert-QaSuccess -Response $completedCanSubmit -Label 'completed can-submit'
+Add-QaCase 'COMPLETION-CLOSES-NEW-SUBMISSION' (-not [bool]$completedCanSubmitBody.data) $completedCanSubmit.Raw
+$completedCreate = Add-Submission "MUST-REJECT-COMPLETED-$stamp" $deliverable.deliverableId $memberAToken
+Add-QaCase 'COMPLETION-NEW-SUBMISSION-DENIED' (Test-Rejected $completedCreate) $completedCreate.Raw
+$existingAfterCompletion = Invoke-Api Get "/submission/$($submission1.submissionId)" $memberAToken
+Add-QaCase 'COMPLETION-EXISTING-SUBMISSION-READABLE' (Test-QaSuccessResponse $existingAfterCompletion) $existingAfterCompletion.Raw
 
 $moveAfterSubmission = Update-Task $leaf $root.taskId $leaderAToken 2
 Add-QaCase 'TREE-MOVE-WITH-SUBMISSIONS-DENIED' (Test-Rejected $moveAfterSubmission) $moveAfterSubmission.Raw

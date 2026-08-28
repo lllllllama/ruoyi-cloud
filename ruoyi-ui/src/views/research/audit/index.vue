@@ -16,8 +16,8 @@
         <template slot-scope="scope">
           <div class="business-table-actions">
             <el-button type="text" icon="el-icon-view" @click="view(scope.row)">查看</el-button>
-            <el-button v-hasPermi="['task:submission:audit']" type="text" icon="el-icon-check" @click="audit(scope.row, true)">通过</el-button>
-            <el-button v-hasPermi="['task:submission:audit']" type="text" icon="el-icon-close" @click="audit(scope.row, false)">退回</el-button>
+            <el-button v-if="scope.row.canAudit" v-hasPermi="['task:submission:audit']" type="text" icon="el-icon-check" @click="audit(scope.row, true)">通过</el-button>
+            <el-button v-if="scope.row.canAudit" v-hasPermi="['task:submission:audit']" type="text" icon="el-icon-close" @click="audit(scope.row, false)">退回</el-button>
           </div>
         </template>
       </el-table-column>

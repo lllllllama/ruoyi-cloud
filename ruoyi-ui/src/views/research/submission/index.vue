@@ -54,7 +54,7 @@ export default {
     }
   },
   computed: {
-    editable() { return this.form.status == null || this.form.status === '0' || this.form.status === '2' },
+    editable() { return this.form.status == null || this.form.canEdit === true },
     contextText() {
       const parts = [this.form.groupName, this.form.taskName, this.form.deliverableName || this.deliverable.deliverableName]
       return parts.filter(Boolean).join(' · ') || '填写成果资料并上传附件'

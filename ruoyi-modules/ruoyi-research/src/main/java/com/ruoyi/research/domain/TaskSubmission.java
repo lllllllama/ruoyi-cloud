@@ -37,7 +37,10 @@ public class TaskSubmission extends BaseEntity
     private String groupName;
     private String submitUserName;
     private String archiveUserName;
+    private Boolean canEdit;
+    private Boolean canDelete;
     private Boolean canWithdraw;
+    private Boolean canAudit;
 
     public Long getSubmissionId() { return submissionId; }
     public void setSubmissionId(Long submissionId) { this.submissionId = submissionId; }
@@ -77,6 +80,12 @@ public class TaskSubmission extends BaseEntity
     public void setSubmitUserName(String submitUserName) { this.submitUserName = submitUserName; }
     public String getArchiveUserName() { return archiveUserName; }
     public void setArchiveUserName(String archiveUserName) { this.archiveUserName = archiveUserName; }
+    public Boolean getCanEdit() { return canEdit; }
+    public void setCanEdit(Boolean canEdit) { this.canEdit = canEdit; }
+    public Boolean getCanDelete() { return canDelete; }
+    public void setCanDelete(Boolean canDelete) { this.canDelete = canDelete; }
     public Boolean getCanWithdraw() { return canWithdraw; }
     public void setCanWithdraw(Boolean canWithdraw) { this.canWithdraw = canWithdraw; }
+    public Boolean getCanAudit() { return canAudit; }
+    public void setCanAudit(Boolean canAudit) { this.canAudit = canAudit; }
 }

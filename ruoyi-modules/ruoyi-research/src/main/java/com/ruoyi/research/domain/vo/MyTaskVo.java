@@ -24,6 +24,7 @@ public class MyTaskVo implements Serializable
     private String status;
     private String timeStatus;
     private Boolean canSubmit;
+    private Boolean canCreateSubmission;
 
     public Long getTaskId() { return taskId; }
     public void setTaskId(Long taskId) { this.taskId = taskId; }
@@ -51,4 +52,6 @@ public class MyTaskVo implements Serializable
     public void setTimeStatus(String timeStatus) { this.timeStatus = timeStatus; }
     public Boolean getCanSubmit() { return canSubmit; }
     public void setCanSubmit(Boolean canSubmit) { this.canSubmit = canSubmit; }
+    public Boolean getCanCreateSubmission() { return canCreateSubmission; }
+    public void setCanCreateSubmission(Boolean canCreateSubmission) { this.canCreateSubmission = canCreateSubmission; }
 }

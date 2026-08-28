@@ -58,7 +58,6 @@ public class TaskSubmissionServiceImplTest
         deliverable.setTaskId(20L);
         deliverable.setGroupId(1L);
         deliverable.setRequiredNum(2);
-        when(deliverableMapper.selectById(30L)).thenReturn(deliverable);
         when(deliverableMapper.selectForUpdate(30L)).thenReturn(deliverable);
         when(deliverableMapper.updateArchiveProgress(anyLong(), anyInt(),
                 any(String.class), any(String.class))).thenReturn(1);
@@ -97,6 +96,25 @@ public class TaskSubmissionServiceImplTest
         assertEquals("0", submission.getStatus());
         assertEquals(Integer.valueOf(0), submission.getVersion());
         assertNull(submission.getSubmitTime());
+    }
+
+    @Test
+    public void completedDeliverableRejectsNewSubmissionCreation()
+    {
+        TaskSubmission submission = input();
+        doThrow(new ServiceException("Deliverable has reached its required archived quantity"))
+                .when(taskPermissionService).assertCanCreateSubmission(30L, 10L);
+
+        try
+        {
+            service.insertDraft(submission);
+            fail("A completed deliverable must reject new submissions");
+        }
+        catch (ServiceException expected)
+        {
+            assertTrue(expected.getMessage().contains("required archived quantity"));
+        }
+        verify(submissionMapper, never()).insert(any(TaskSubmission.class));
     }
 
     @Test
@@ -437,6 +455,17 @@ public class TaskSubmissionServiceImplTest
         submission.setStatus(status);
         submission.setVersion(0);
         return submission;
+    }
+
+    @Test
+    public void existingSubmissionRemainsReadableAfterCompletion()
+    {
+        TaskSubmission existing = storedSubmission("0");
+        when(submissionMapper.selectById(40L)).thenReturn(existing);
+
+        assertEquals(existing, service.selectById(40L));
+        verify(taskPermissionService).assertCanViewSubmission(existing, 10L);
+        verify(taskPermissionService, never()).assertCanCreateSubmission(anyLong(), anyLong());
     }
 
     private void assertPrivilegedNonOwnerCannotWithdraw(String message)

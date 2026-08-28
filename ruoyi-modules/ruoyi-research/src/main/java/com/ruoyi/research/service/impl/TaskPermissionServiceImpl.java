@@ -97,6 +97,35 @@ public class TaskPermissionServiceImpl implements TaskPermissionService
     }
 
     @Override
+    public boolean canCreateSubmission(Long deliverableId, Long userId)
+    {
+        if (!canSubmitDeliverable(deliverableId, userId))
+        {
+            return false;
+        }
+        TaskDeliverable deliverable = deliverableMapper.selectById(deliverableId);
+        return deliverable != null && !hasReachedRequiredQuantity(deliverable);
+    }
+
+    @Override
+    public void assertCanCreateSubmission(Long deliverableId, Long userId)
+    {
+        if (!canSubmitDeliverable(deliverableId, userId))
+        {
+            throw new ServiceException("Current user is not allowed to submit this deliverable");
+        }
+        TaskDeliverable deliverable = deliverableMapper.selectById(deliverableId);
+        if (deliverable == null)
+        {
+            throw new ServiceException("Task deliverable does not exist");
+        }
+        if (hasReachedRequiredQuantity(deliverable))
+        {
+            throw new ServiceException("Deliverable has reached its required archived quantity; new submissions are closed");
+        }
+    }
+
+    @Override
     public boolean canBeDeliverableAssignee(Long groupId, Long userId)
     {
         return groupId != null && userId != null
@@ -126,10 +155,22 @@ public class TaskPermissionServiceImpl implements TaskPermissionService
     @Override
     public void assertCanAuditSubmission(TaskSubmission submission, Long userId)
     {
-        if (submission == null || !researchPermissionService.isGroupLeader(submission.getGroupId(), userId))
+        if (submission != null && userId != null && userId.equals(submission.getSubmitUserId()))
+        {
+            throw new ServiceException("A submitter cannot audit their own submission");
+        }
+        if (!canAuditSubmission(submission, userId))
         {
             throw new ServiceException("Only administrators or research group leaders may audit submissions");
         }
+    }
+
+    @Override
+    public boolean canAuditSubmission(TaskSubmission submission, Long userId)
+    {
+        return submission != null && userId != null
+                && !userId.equals(submission.getSubmitUserId())
+                && researchPermissionService.isGroupLeader(submission.getGroupId(), userId);
     }
 
     @Override
@@ -144,5 +185,11 @@ public class TaskPermissionServiceImpl implements TaskPermissionService
             return;
         }
         throw new ServiceException("No permission to view this submission");
+    }
+
+    private boolean hasReachedRequiredQuantity(TaskDeliverable deliverable)
+    {
+        int archivedNum = deliverable.getArchivedNum() == null ? 0 : deliverable.getArchivedNum();
+        return deliverable.getRequiredNum() != null && archivedNum >= deliverable.getRequiredNum();
     }
 }

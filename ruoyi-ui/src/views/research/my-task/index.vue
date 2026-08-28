@@ -15,7 +15,7 @@
       <el-table-column label="截止时间" prop="deadline" width="110" />
       <el-table-column label="业务状态" width="90"><template slot-scope="scope"><el-tag :type="businessType(scope.row.status)">{{ businessName(scope.row.status) }}</el-tag></template></el-table-column>
       <el-table-column label="时间状态" width="100"><template slot-scope="scope"><el-tag effect="plain" :type="timeType(scope.row.timeStatus)">{{ timeName(scope.row.timeStatus) }}</el-tag></template></el-table-column>
-      <el-table-column label="操作" width="190" fixed="right"><template slot-scope="scope"><div class="business-table-actions"><el-button v-if="scope.row.canSubmit" v-hasPermi="['task:submission:add']" type="text" icon="el-icon-upload2" @click="submit(scope.row)">提交成果</el-button><el-button v-hasPermi="['task:submission:add']" type="text" icon="el-icon-document" @click="openMine(scope.row)">我的提交</el-button></div></template></el-table-column>
+      <el-table-column label="操作" width="190" fixed="right"><template slot-scope="scope"><div class="business-table-actions"><el-button v-if="scope.row.canCreateSubmission" v-hasPermi="['task:submission:add']" type="text" icon="el-icon-upload2" @click="submit(scope.row)">提交成果</el-button><el-button v-hasPermi="['task:submission:add']" type="text" icon="el-icon-document" @click="openMine(scope.row)">我的提交</el-button></div></template></el-table-column>
     </el-table>
 
     <el-dialog :title="(mineDeliverable.deliverableName || '成果') + ' · 我的提交'" :visible.sync="mineOpen" width="860px" append-to-body>

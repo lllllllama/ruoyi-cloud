@@ -62,7 +62,7 @@ public class TaskDeliverableController extends BaseController
     @GetMapping("/{id}/can-submit")
     public AjaxResult canSubmit(@PathVariable("id") Long id)
     {
-        return AjaxResult.success(taskPermissionService.canSubmitDeliverable(id, SecurityUtils.getUserId()));
+        return AjaxResult.success(taskPermissionService.canCreateSubmission(id, SecurityUtils.getUserId()));
     }
 
     @RequiresPermissions("task:deliverable:assign")

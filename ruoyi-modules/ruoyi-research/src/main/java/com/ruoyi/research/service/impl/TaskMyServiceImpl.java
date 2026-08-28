@@ -30,6 +30,8 @@ public class TaskMyServiceImpl implements TaskMyService
         for (MyTaskVo task : tasks)
         {
             task.setCanSubmit(taskPermissionService.canSubmitDeliverable(task.getDeliverableId(), userId));
+            task.setCanCreateSubmission(taskPermissionService.canCreateSubmission(
+                    task.getDeliverableId(), userId));
             task.setTimeStatus(calculateTimeStatus(task.getDeadline(), task.getStatus()));
         }
         return tasks;

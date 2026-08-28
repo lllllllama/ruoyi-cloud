@@ -76,6 +76,21 @@ public class TaskPermissionServiceImplTest
     }
 
     @Test
+    public void completedDeliverableRejectsNewSubmissionCreation()
+    {
+        TaskDeliverable completed = new TaskDeliverable();
+        completed.setDeliverableId(30L);
+        completed.setGroupId(1L);
+        completed.setRequiredNum(2);
+        completed.setArchivedNum(2);
+        when(deliverableMapper.selectById(30L)).thenReturn(completed);
+        when(deliverableUserMapper.countByDeliverableId(30L)).thenReturn(0);
+
+        assertTrue(service.canSubmitDeliverable(30L, 11L));
+        assertFalse(service.canCreateSubmission(30L, 11L));
+    }
+
+    @Test
     public void outsiderCannotSubmit()
     {
         when(researchPermissionService.isGroupMember(1L, 20L)).thenReturn(false);
@@ -105,15 +120,41 @@ public class TaskPermissionServiceImplTest
     }
 
     @Test
-    public void submissionAuditRequiresLeaderAndOwnerCheckUsesServerIdentity()
+    public void leaderCanAuditMemberSubmission()
+    {
+        TaskSubmission submission = submission("1", 10L);
+        when(researchPermissionService.isGroupLeader(1L, 11L)).thenReturn(true);
+        service.assertCanAuditSubmission(submission, 11L);
+    }
+
+    @Test
+    public void adminCanAuditMemberSubmission()
+    {
+        TaskSubmission submission = submission("1", 10L);
+        when(researchPermissionService.isGroupLeader(1L, 1L)).thenReturn(true);
+        service.assertCanAuditSubmission(submission, 1L);
+    }
+
+    @Test
+    public void submitterCannotAuditOwnSubmission()
+    {
+        TaskSubmission submission = submission("1", 10L);
+        expectDenied(() -> service.assertCanAuditSubmission(submission, 10L));
+    }
+
+    @Test
+    public void nonLeaderCannotAudit()
+    {
+        TaskSubmission submission = submission("1", 10L);
+        expectDenied(() -> service.assertCanAuditSubmission(submission, 12L));
+    }
+
+    @Test
+    public void submissionOwnerCheckUsesServerIdentity()
     {
         TaskSubmission submission = submission("1", 10L);
         service.assertSubmissionOwner(submission, 10L);
         expectDenied(() -> service.assertSubmissionOwner(submission, 11L));
-
-        when(researchPermissionService.isGroupLeader(1L, 11L)).thenReturn(true);
-        service.assertCanAuditSubmission(submission, 11L);
-        expectDenied(() -> service.assertCanAuditSubmission(submission, 12L));
     }
 
     private TaskSubmission submission(String status, Long ownerId)
