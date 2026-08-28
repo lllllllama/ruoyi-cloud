@@ -138,6 +138,15 @@ $leaderBToken = Get-QaToken -BaseUrl $BaseUrl -Username 'b_leader'
 $coreBToken = Get-QaToken -BaseUrl $BaseUrl -Username 'b_core'
 
 Write-Output '[2/8] Create exact DECIMAL budgets'
+$invalidBudget = Invoke-QaRawRequest -BaseUrl $BaseUrl -Method Post -Path '/ruoyi-fund/budget' -Token $adminToken -Body @{
+    topicId = $groupA; totalAmount = [decimal]'100.001'; planEndTime = '2026-12-31 23:59:59'; fundDesc = 'must reject scale 3'
+}
+$invalidBudgetRejected = -not (Test-QaSuccessResponse $invalidBudget)
+Add-QaCase 'BUDGET-INVALID-SCALE-3' $invalidBudgetRejected $invalidBudget.Raw
+if (-not $invalidBudgetRejected) {
+    $createdBudget = (Assert-QaSuccess -Response (Invoke-QaRawRequest -BaseUrl $BaseUrl -Method Get -Path "/ruoyi-fund/budget/topic/$groupA" -Token $adminToken) -Label 'get invalid budget').data
+    Assert-QaSuccess -Response (Invoke-QaRawRequest -BaseUrl $BaseUrl -Method Delete -Path "/ruoyi-fund/budget/$($createdBudget.budgetId)" -Token $adminToken) -Label 'cleanup invalid budget' | Out-Null
+}
 $budgetA = Invoke-QaRawRequest -BaseUrl $BaseUrl -Method Post -Path '/ruoyi-fund/budget' -Token $adminToken -Body @{
     topicId = $groupA; totalAmount = [decimal]'100.00'; planEndTime = '2026-12-31 23:59:59'; fundDesc = 'QA boundary budget'
 }
@@ -347,7 +356,7 @@ $failed = @($script:Results | Where-Object { $_.Status -eq 'FAIL' })
     Total = $script:Results.Count
     Passed = $script:Results.Count - $failed.Count
     Failed = $failed.Count
-    FailedCases = @($failed.Case)
+    FailedCases = @($failed | ForEach-Object { $_.Case })
 } | ConvertTo-Json -Depth 5
 
 if ($failed.Count -gt 0) { exit 1 }

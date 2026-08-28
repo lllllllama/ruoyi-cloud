@@ -6,6 +6,7 @@ import java.util.List;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.ruoyi.common.core.web.domain.BaseEntity;
 import javax.validation.constraints.DecimalMin;
+import javax.validation.constraints.Digits;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
@@ -22,6 +23,7 @@ public class FundProjectBudget extends BaseEntity
     /** 课题总资金 */
     @NotNull(message = "课题总资金不能为空")
     @DecimalMin(value = "0.01", message = "课题总资金必须大于0")
+    @Digits(integer = 16, fraction = 2, message = "课题总资金最多保留2位小数")
     private BigDecimal totalAmount;
     /** 计划拨付完成时间 */
     @JsonFormat(pattern = "yyyy-MM-dd HH:mm:ss")

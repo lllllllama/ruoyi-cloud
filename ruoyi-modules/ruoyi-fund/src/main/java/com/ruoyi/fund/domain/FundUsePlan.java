@@ -6,6 +6,7 @@ import java.util.List;
 import com.fasterxml.jackson.annotation.JsonFormat;
 import com.ruoyi.common.core.web.domain.BaseEntity;
 import javax.validation.constraints.DecimalMin;
+import javax.validation.constraints.Digits;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
@@ -27,6 +28,7 @@ public class FundUsePlan extends BaseEntity
     /** 使用计划金额 */
     @NotNull(message = "使用金额不能为空")
     @DecimalMin(value = "0.01", message = "使用金额必须大于0")
+    @Digits(integer = 16, fraction = 2, message = "使用金额最多保留2位小数")
     private BigDecimal planAmount;
     /** 责任人ID */
     private Long responsibleUserId;

@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonProperty;
 import com.ruoyi.common.core.web.domain.BaseEntity;
 import javax.validation.constraints.DecimalMin;
+import javax.validation.constraints.Digits;
 import javax.validation.constraints.NotBlank;
 import javax.validation.constraints.NotNull;
 
@@ -24,6 +25,7 @@ public class FundAllocationRecord extends BaseEntity
     /** 实际拨付金额 */
     @NotNull(message = "拨付金额不能为空")
     @DecimalMin(value = "0.01", message = "拨付金额必须大于0")
+    @Digits(integer = 16, fraction = 2, message = "拨付金额最多保留2位小数")
     private BigDecimal amount;
     /** 拨付时间 */
     @NotNull(message = "拨付时间不能为空")
