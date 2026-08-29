@@ -10,6 +10,10 @@ export function frameworkOptions() {
   return request({ url: base + '/options', method: 'get' })
 }
 
+export function frameworkGroupOptions() {
+  return request({ url: base + '/group-options', method: 'get' })
+}
+
 export function getFramework(id) {
   return request({ url: base + '/' + id, method: 'get' })
 }

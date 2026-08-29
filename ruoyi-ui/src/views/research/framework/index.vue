@@ -44,9 +44,7 @@
 </template>
 
 <script>
-import { listDept } from '@/api/system/dept'
-import { accessibleGroups } from '@/api/research/group'
-import { listFrameworks, getFramework, addFramework, updateFramework, deleteFramework } from '@/api/research/framework'
+import { listFrameworks, frameworkGroupOptions, getFramework, addFramework, updateFramework, deleteFramework } from '@/api/research/framework'
 
 export default {
   name: 'TaskFramework',
@@ -70,12 +68,22 @@ export default {
       set(value) { this.$set(this.form, 'year', value ? Number(value) : null) }
     },
     selectedGroup() { return this.groups.find(item => item.groupId === this.form.groupId) },
-    groupUnits() { return this.selectedGroup ? (this.selectedGroup.units || []).filter(item => item.status === '0') : [] }
+    groupUnits() { return this.selectedGroup ? (this.selectedGroup.units || []) : [] }
   },
   created() {
-    Promise.all([accessibleGroups(), listDept({ status: '0' })]).then(([groups, depts]) => {
-      this.groups = groups.data || []
-      this.depts = depts.data || []
+    frameworkGroupOptions().then(res => {
+      this.groups = res.data || []
+      const depts = []
+      const knownDeptIds = {}
+      this.groups.forEach(group => {
+        (group.units || []).forEach(unit => {
+          if (!knownDeptIds[unit.deptId]) {
+            knownDeptIds[unit.deptId] = true
+            depts.push({ deptId: unit.deptId, deptName: unit.deptName })
+          }
+        })
+      })
+      this.depts = depts
       this.load()
     })
   },

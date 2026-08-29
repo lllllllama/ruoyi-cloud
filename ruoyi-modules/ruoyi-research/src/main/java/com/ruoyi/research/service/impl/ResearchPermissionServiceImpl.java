@@ -76,6 +76,20 @@ public class ResearchPermissionServiceImpl implements ResearchPermissionService
         return permissionMapper.selectAllowedGroupIds(userId);
     }
 
+    @Override
+    public List<Long> getLeaderGroupIds(Long userId)
+    {
+        if (isAdmin(userId))
+        {
+            return permissionMapper.selectAllActiveGroupIds();
+        }
+        if (userId == null)
+        {
+            return Collections.emptyList();
+        }
+        return permissionMapper.selectLeaderGroupIds(userId);
+    }
+
     private boolean hasRole(Long groupId, Long userId, String role)
     {
         return isAdmin(userId) || valid(groupId, userId)

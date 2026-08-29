@@ -44,6 +44,13 @@
         order by m.group_id
     </select>
 
+    <select id="selectLeaderGroupIds" resultType="long">
+        select distinct m.group_id
+        <include refid="activeGroupMember"/>
+        and m.user_id = #{userId} and m.member_role = 'LEADER'
+        order by m.group_id
+    </select>
+
     <select id="selectAllActiveGroupIds" resultType="long">
         select group_id from biz_research_group
         where del_flag = '0' and status = '0'

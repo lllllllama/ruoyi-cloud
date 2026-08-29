@@ -33,10 +33,8 @@ public class TaskFrameworkController extends BaseController
     @GetMapping("/options")
     public AjaxResult options()
     {
-        TaskFramework query = new TaskFramework();
-        query.setStatus("0");
         List<TaskFrameworkOptionVo> options = new ArrayList<>();
-        for (TaskFramework framework : frameworkService.selectList(query))
+        for (TaskFramework framework : frameworkService.selectOptions())
         {
             TaskFrameworkOptionVo option = new TaskFrameworkOptionVo();
             option.setFrameworkId(framework.getFrameworkId());
@@ -47,6 +45,13 @@ public class TaskFrameworkController extends BaseController
             options.add(option);
         }
         return AjaxResult.success(options);
+    }
+
+    @RequiresPermissions("task:framework:list")
+    @GetMapping("/group-options")
+    public AjaxResult groupOptions()
+    {
+        return AjaxResult.success(frameworkService.selectManagedGroupOptions());
     }
 
     @RequiresPermissions("task:framework:list")

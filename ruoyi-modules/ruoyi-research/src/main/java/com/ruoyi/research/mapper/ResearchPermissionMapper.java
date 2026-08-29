@@ -18,5 +18,7 @@ public interface ResearchPermissionMapper
 
     List<Long> selectAllowedGroupIds(Long userId);
 
+    List<Long> selectLeaderGroupIds(Long userId);
+
     List<Long> selectAllActiveGroupIds();
 }

@@ -7,7 +7,13 @@ public interface TaskPermissionService
 {
     List<Long> getAllowedGroupIds(Long userId);
 
+    List<Long> getManagedGroupIds(Long userId);
+
     void assertCanViewGroup(Long groupId, Long userId);
+
+    void assertCanViewFrameworkGroup(Long groupId, Long userId);
+
+    void assertCanMaintainFramework(Long userId);
 
     void assertCanMaintainGroup(Long groupId, Long userId);
 

@@ -1,10 +1,12 @@
 package com.ruoyi.research.service.impl;
 
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
 import static org.mockito.ArgumentMatchers.argThat;
 import static org.mockito.Mockito.when;
+import java.util.Collections;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -155,6 +157,24 @@ public class TaskPermissionServiceImplTest
         TaskSubmission submission = submission("1", 10L);
         service.assertSubmissionOwner(submission, 10L);
         expectDenied(() -> service.assertSubmissionOwner(submission, 11L));
+    }
+
+    @Test
+    public void annualFrameworkViewIsLimitedToLeaderGroups()
+    {
+        when(researchPermissionService.getLeaderGroupIds(10L)).thenReturn(Collections.singletonList(1L));
+        when(researchPermissionService.isGroupLeader(1L, 10L)).thenReturn(true);
+
+        assertEquals(Collections.singletonList(1L), service.getManagedGroupIds(10L));
+        service.assertCanViewFrameworkGroup(1L, 10L);
+        expectDenied(() -> service.assertCanViewFrameworkGroup(1L, 11L));
+    }
+
+    @Test
+    public void onlySystemAdministratorCanMaintainAnnualFrameworks()
+    {
+        service.assertCanMaintainFramework(1L);
+        expectDenied(() -> service.assertCanMaintainFramework(10L));
     }
 
     private TaskSubmission submission(String status, Long ownerId)

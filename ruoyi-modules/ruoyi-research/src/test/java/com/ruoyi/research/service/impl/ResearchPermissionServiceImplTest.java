@@ -54,6 +54,8 @@ public class ResearchPermissionServiceImplTest
         when(mapper.selectAllowedGroupIds(OUTSIDER)).thenReturn(Collections.emptyList());
         when(mapper.selectAllowedGroupIds(A_LEADER)).thenReturn(Collections.singletonList(GROUP_A));
         when(mapper.selectAllowedGroupIds(B_CORE)).thenReturn(Collections.singletonList(GROUP_B));
+        when(mapper.selectLeaderGroupIds(A_LEADER)).thenReturn(Collections.singletonList(GROUP_A));
+        when(mapper.selectLeaderGroupIds(A_MEMBER)).thenReturn(Collections.emptyList());
         when(mapper.selectAllActiveGroupIds()).thenReturn(Arrays.asList(GROUP_A, GROUP_B));
     }
 
@@ -76,6 +78,14 @@ public class ResearchPermissionServiceImplTest
         assertFalse(service.isGroupLeader(GROUP_B, A_LEADER));
         assertFalse(service.canViewGroup(GROUP_B, A_MEMBER));
         assertEquals(Collections.singletonList(GROUP_A), service.getAllowedGroupIds(A_LEADER));
+    }
+
+    @Test
+    public void annualFrameworkScopeContainsOnlyLedGroups()
+    {
+        assertEquals(Arrays.asList(GROUP_A, GROUP_B), service.getLeaderGroupIds(ADMIN));
+        assertEquals(Collections.singletonList(GROUP_A), service.getLeaderGroupIds(A_LEADER));
+        assertTrue(service.getLeaderGroupIds(A_MEMBER).isEmpty());
     }
 
     @Test

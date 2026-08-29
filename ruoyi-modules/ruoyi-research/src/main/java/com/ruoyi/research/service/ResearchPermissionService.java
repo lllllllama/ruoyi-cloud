@@ -19,4 +19,6 @@ public interface ResearchPermissionService
     boolean canViewGroup(Long groupId, Long userId);
 
     List<Long> getAllowedGroupIds(Long userId);
+
+    List<Long> getLeaderGroupIds(Long userId);
 }

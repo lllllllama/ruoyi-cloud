@@ -1,5 +1,6 @@
 package com.ruoyi.research.service.impl;
 
+import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import com.ruoyi.common.core.constant.SecurityConstants;
@@ -15,6 +16,12 @@ public class ResearchOrgServiceImpl implements ResearchOrgService
 {
     @Autowired
     private RemoteFundSupportService remoteService;
+
+    @Override
+    public List<FundDeptOption> getDepts()
+    {
+        return requireData(remoteService.getDepts(SecurityConstants.INNER), "No active departments are available");
+    }
 
     @Override
     public FundUserOption getUser(Long userId)

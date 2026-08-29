@@ -34,11 +34,35 @@ public class TaskPermissionServiceImpl implements TaskPermissionService
     }
 
     @Override
+    public List<Long> getManagedGroupIds(Long userId)
+    {
+        return researchPermissionService.getLeaderGroupIds(userId);
+    }
+
+    @Override
     public void assertCanViewGroup(Long groupId, Long userId)
     {
         if (!researchPermissionService.canViewGroup(groupId, userId))
         {
             throw new ServiceException("No permission to view this research group task data");
+        }
+    }
+
+    @Override
+    public void assertCanViewFrameworkGroup(Long groupId, Long userId)
+    {
+        if (!researchPermissionService.isGroupLeader(groupId, userId))
+        {
+            throw new ServiceException("Only administrators or research group leaders may view annual task frameworks");
+        }
+    }
+
+    @Override
+    public void assertCanMaintainFramework(Long userId)
+    {
+        if (!ResearchSecurityUtils.isSystemAdmin(userId))
+        {
+            throw new ServiceException("Only system administrators may maintain annual task frameworks");
         }
     }
 
