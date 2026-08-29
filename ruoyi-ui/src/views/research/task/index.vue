@@ -84,7 +84,7 @@
 </template>
 
 <script>
-import { listFrameworks } from '@/api/research/framework'
+import { frameworkOptions } from '@/api/research/framework'
 import { groupMembers } from '@/api/research/group'
 import { listTasks, getTask, validateTaskFramework, addTask, updateTask, deleteTask } from '@/api/research/task'
 import { listDeliverables, getDeliverable, getDeliverableAssignees, assignDeliverable, addDeliverable, updateDeliverable, deleteDeliverable } from '@/api/research/deliverable'
@@ -111,8 +111,8 @@ export default {
     framework() { return this.frameworks.find(item => item.frameworkId === this.frameworkId) }
   },
   created() {
-    listFrameworks({ pageNum: 1, pageSize: 1000, status: '0' }).then(res => {
-      this.frameworks = res.rows || []
+    frameworkOptions().then(res => {
+      this.frameworks = res.data || []
       if (this.frameworks.length) {
         this.frameworkId = this.frameworks[0].frameworkId
         this.loadTasks()

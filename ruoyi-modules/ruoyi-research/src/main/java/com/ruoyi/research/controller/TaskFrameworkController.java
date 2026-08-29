@@ -1,5 +1,6 @@
 package com.ruoyi.research.controller;
 
+import java.util.ArrayList;
 import java.util.List;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.validation.annotation.Validated;
@@ -18,6 +19,7 @@ import com.ruoyi.common.log.annotation.Log;
 import com.ruoyi.common.log.enums.BusinessType;
 import com.ruoyi.common.security.annotation.RequiresPermissions;
 import com.ruoyi.research.domain.TaskFramework;
+import com.ruoyi.research.domain.vo.TaskFrameworkOptionVo;
 import com.ruoyi.research.service.TaskFrameworkService;
 
 @RestController
@@ -26,6 +28,26 @@ public class TaskFrameworkController extends BaseController
 {
     @Autowired
     private TaskFrameworkService frameworkService;
+
+    @RequiresPermissions("task:info:list")
+    @GetMapping("/options")
+    public AjaxResult options()
+    {
+        TaskFramework query = new TaskFramework();
+        query.setStatus("0");
+        List<TaskFrameworkOptionVo> options = new ArrayList<>();
+        for (TaskFramework framework : frameworkService.selectList(query))
+        {
+            TaskFrameworkOptionVo option = new TaskFrameworkOptionVo();
+            option.setFrameworkId(framework.getFrameworkId());
+            option.setGroupId(framework.getGroupId());
+            option.setFrameworkName(framework.getFrameworkName());
+            option.setYear(framework.getYear());
+            option.setGroupName(framework.getGroupName());
+            options.add(option);
+        }
+        return AjaxResult.success(options);
+    }
 
     @RequiresPermissions("task:framework:list")
     @GetMapping("/list")

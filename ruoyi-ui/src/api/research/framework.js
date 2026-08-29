@@ -6,6 +6,10 @@ export function listFrameworks(query) {
   return request({ url: base + '/list', method: 'get', params: query })
 }
 
+export function frameworkOptions() {
+  return request({ url: base + '/options', method: 'get' })
+}
+
 export function getFramework(id) {
   return request({ url: base + '/' + id, method: 'get' })
 }
